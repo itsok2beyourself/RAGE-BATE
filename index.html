@@ -1098,6 +1098,12 @@
     user-select: none;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     background: var(--navy2);
+    transition: border-bottom 0.3s;
+  }
+  
+  /* Remove bottom border when collapsed */
+  .comment-area.collapsed .comment-area-header {
+    border-bottom: none;
   }
 
   .comment-area-title {
@@ -1134,9 +1140,16 @@
     flex-direction: column;
     filter: blur(8px);
     opacity: 0.4;
-    transition: filter 0.3s, opacity 0.3s;
+    transition: filter 0.3s, opacity 0.3s, flex 0.3s;
     pointer-events: none;
     overflow-y: auto; /* Allow scrolling */
+  }
+  
+  /* When collapsed, remove flex grow so it doesn't take up space */
+  .comment-area.collapsed {
+    flex: 0 !important;
+    border-top: none;
+    overflow: hidden;
   }
   
   /* Unblur after vote is cast and confirmed - FORCE IT */
@@ -3829,6 +3842,7 @@ function key(){ return (isRage?'r':'g')+'_'+idx; }
 function toggleComments() {
   const body = document.getElementById('comment-body');
   const arrow = document.getElementById('comment-arrow');
+  const area = body?.closest('.comment-area'); // Get parent comment-area
   
   if (!body || !arrow) return;
   
@@ -3836,9 +3850,11 @@ function toggleComments() {
   
   if (commentsExpanded) {
     body.classList.remove('collapsed');
+    if (area) area.classList.remove('collapsed');
     arrow.textContent = '▼';
   } else {
     body.classList.add('collapsed');
+    if (area) area.classList.add('collapsed');
     arrow.textContent = '▶';
   }
 }
