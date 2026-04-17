@@ -1099,9 +1099,10 @@
     border-bottom: 1px solid rgba(255,255,255,0.05);
     background: var(--navy2);
     transition: border-bottom 0.3s;
+    flex-shrink: 0; /* Header always stays same size */
   }
   
-  /* Remove bottom border when collapsed */
+  /* Remove bottom border when collapsed (no content below) */
   .comment-area.collapsed .comment-area-header {
     border-bottom: none;
   }
@@ -1133,23 +1134,21 @@
 
   /* ── COMMENT AREA ── */
   .comment-area {
-    flex: 1; /* Grow to fill remaining space */
     border-top: 1px solid rgba(0,191,255,0.12);
     background: var(--navy2);
     display: flex;
     flex-direction: column;
     filter: blur(8px);
     opacity: 0.4;
-    transition: filter 0.3s, opacity 0.3s, flex 0.3s;
+    transition: filter 0.3s, opacity 0.3s;
     pointer-events: none;
-    overflow-y: auto; /* Allow scrolling */
+    overflow: hidden; /* Prevent content overflow */
   }
   
-  /* When collapsed, remove flex grow so it doesn't take up space */
+  /* When collapsed, only show header - no background space */
   .comment-area.collapsed {
-    flex: 0 !important;
     border-top: none;
-    overflow: hidden;
+    background: transparent;
   }
   
   /* Unblur after vote is cast and confirmed - FORCE IT */
