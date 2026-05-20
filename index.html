@@ -359,6 +359,75 @@
     min-height: 0;
   }
 
+  /* ── CARD STACK ── */
+  .card-stack {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .rebuttal-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--navy3);
+    border: 1px solid rgba(0, 196, 255, 0.2);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  
+  .rebuttal-card.rebuttal-peek {
+    pointer-events: auto;
+  }
+  
+  /* Stack offset effect */
+  .rebuttal-card:nth-child(1) {
+    transform: translateY(12px) scale(0.96);
+  }
+  
+  .rebuttal-card:nth-child(2) {
+    transform: translateY(8px) scale(0.98);
+  }
+  
+  .rebuttal-card:nth-child(3) {
+    transform: translateY(4px) scale(0.99);
+  }
+  
+  .rebuttal-card:nth-child(4) {
+    transform: translateY(2px) scale(0.995);
+  }
+  
+  .rebuttal-card:hover {
+    transform: translateY(-2px) scale(1.01) !important;
+    border-color: rgba(0, 196, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(0, 196, 255, 0.2);
+  }
+  
+  .rebuttal-mini-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--cyan);
+    font-family: var(--font-b);
+    padding: 6px 16px;
+    background: rgba(0, 196, 255, 0.1);
+    border: 1px solid rgba(0, 196, 255, 0.3);
+    border-radius: 20px;
+  }
+  
+  .rebuttal-card.hidden {
+    display: none;
+  }
+
   /* ── DEBATE CARD ── */
   .card {
     flex: 1;
@@ -395,6 +464,95 @@
   .swipe-label.up    {
     top: auto; bottom: 18px; left: 50%; transform: translateX(-50%);
     color: var(--yellow); border-color: var(--yellow);
+  }
+  
+  .swipe-label.down  {
+    top: 18px; bottom: auto; left: 50%; transform: translateX(-50%);
+    color: var(--cyan); border-color: var(--cyan);
+  }
+
+  /* ── FACT-CHECK BADGE ── */
+  .fact-badge {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: var(--font-b);
+    z-index: 5;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  
+  .fact-badge .badge-text {
+    display: none;
+    white-space: nowrap;
+  }
+  
+  .fact-badge:hover .badge-text {
+    display: inline;
+  }
+  
+  .fact-badge.verified {
+    background: rgba(0, 255, 127, 0.1);
+    border: 1px solid rgba(0, 255, 127, 0.3);
+    color: #00FF7F;
+  }
+  
+  .fact-badge.bypassed {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.5);
+    color: #FFA500;
+  }
+  
+  .fact-badge:hover {
+    padding: 4px 12px;
+  }
+  
+  .fact-badge.hidden {
+    display: none;
+  }
+  
+  .badge-icon {
+    font-size: 14px;
+  }
+
+  /* ── REBUTTAL COUNTER ── */
+  .rebuttal-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-family: var(--font-b);
+  }
+  
+  .rebuttal-side {
+    color: var(--muted);
+  }
+  
+  .rebuttal-divider {
+    color: rgba(255,255,255,0.2);
+  }
+  
+  #rebuttal-a-count {
+    color: var(--red);
+    font-weight: 700;
+  }
+  
+  #rebuttal-b-count {
+    color: var(--cyan);
+    font-weight: 700;
   }
 
   /* ── TOPIC ── */
@@ -992,6 +1150,98 @@
 
   .card-options-btn:active {
     transform: scale(0.95);
+  }
+
+  /* ── CREATE CHOICE ROW ── */
+  .create-choice-row {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    display: none; /* Hidden by default */
+    justify-content: space-between;
+    gap: 8px;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  
+  .create-choice-row.show {
+    display: flex;
+    opacity: 1;
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .create-choice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 16px;
+    background: var(--navy2);
+    border: 1px solid rgba(0, 196, 255, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 140px;
+  }
+  
+  .create-choice-btn:hover {
+    background: rgba(0, 196, 255, 0.1);
+    border-color: var(--cyan);
+    transform: scale(1.05);
+  }
+  
+  .create-choice-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .create-choice-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  
+  .choice-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--white);
+    font-family: var(--font-b);
+  }
+  
+  .choice-cost {
+    font-size: 8px;
+    color: var(--cyan);
+    font-weight: 600;
+    font-family: var(--font-b);
+  }
+  
+  .choice-count {
+    font-size: 8px;
+    color: var(--yellow);
+    font-weight: 700;
+    font-family: var(--font-b);
+  }
+  
+  .rebuttal-choice {
+    border-color: rgba(255, 165, 0, 0.3);
+  }
+  
+  .rebuttal-choice:hover {
+    border-color: var(--yellow);
+    background: rgba(255, 165, 0, 0.08);
   }
 
   /* ══════════════════════════════════════════════════
@@ -3083,8 +3333,8 @@
 <div class="modal-overlay" id="create-modal">
   <div class="modal-sheet create-sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">CREATE ARGUMENT</div>
-    <div class="sheet-sub">YOU ARGUE ONE SIDE — SHARE FOR SOMEONE ELSE TO COMPLETE</div>
+    <div class="sheet-title" id="create-sheet-title">CREATE ARGUMENT</div>
+    <div class="sheet-sub" id="create-sheet-sub">YOU ARGUE ONE SIDE — SHARE FOR SOMEONE ELSE TO COMPLETE</div>
 
     <div class="create-field-label lbl-q">❓ DEBATE QUESTION</div>
     <input class="create-input" id="create-topic" type="text" placeholder="SHOULD WE...? IS IT...? DOES...?" maxlength="120" oninput="ccCount()">
@@ -3143,6 +3393,40 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">ARGUMENT LIVE 🎉</div>
     <div class="sheet-sub">SHARE THIS LINK — THEY ARGUE THE OTHER SIDE</div>
+
+<!-- ═══ FACT-CHECK BYPASS MODAL ═══ -->
+<div class="modal-overlay" id="factcheck-modal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">⚠️ FACT DETECTED</div>
+    <div class="sheet-sub">WEB SEARCH FOUND VERIFIABLE FACTS</div>
+    
+    <div style="padding: 20px; background: rgba(255,107,157,0.05); border: 1px solid rgba(255,107,157,0.2); border-radius: 12px; margin: 16px 0;">
+      <div style="font-size: 11px; color: var(--red); font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;">
+        🔍 WEB SEARCH RESULTS
+      </div>
+      <div style="font-size: 13px; color: var(--white); line-height: 1.6; margin-bottom: 12px;" id="factcheck-reason">
+        Contains verifiable statistical claims or historical facts
+      </div>
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 12px;">
+        <strong style="color: var(--yellow);">💡 TIP:</strong> BATE is for opinions. Rephrase as your personal take, not objective facts.
+      </div>
+    </div>
+    
+    <div class="token-note" style="margin: 16px 0;">
+      🪙 BYPASS COSTS <span style="color: var(--red);">3 EXTRA TOKENS</span> (4 TOTAL)
+    </div>
+    
+    <button class="sheet-btn" style="background: var(--red); border-color: var(--red);" onclick="bypassFactCheck()">
+      BYPASS & POST ANYWAY — 4 TOKENS
+    </button>
+    <button class="sheet-btn ghost" onclick="closeModal('factcheck-modal')">
+      GO BACK & REPHRASE
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SHARE LINK MODAL (continued) ═══ -->
     <div class="share-link-label">TAP TO COPY LINK</div>
     <div class="share-link-box" id="share-link-box" onclick="copyShareLink()">
       bate.app/debate/xxxxxxxx
@@ -3358,17 +3642,51 @@
   </div>
 </div>
 
-<!-- CARD -->
+<!-- CARD STACK -->
 <div class="card-area">
+  <div class="card-stack" id="card-stack">
+    
+    <!-- Rebuttal cards (behind) -->
+    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-4" onclick="viewRebuttal(4)" style="z-index: 1;">
+      <div class="rebuttal-mini-label">SIDE B - REBUTTAL 2/2</div>
+    </div>
+    
+    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-3" onclick="viewRebuttal(3)" style="z-index: 2;">
+      <div class="rebuttal-mini-label">SIDE B - REBUTTAL 1/2</div>
+    </div>
+    
+    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-2" onclick="viewRebuttal(2)" style="z-index: 3;">
+      <div class="rebuttal-mini-label">SIDE A - REBUTTAL 2/2</div>
+    </div>
+    
+    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-1" onclick="viewRebuttal(1)" style="z-index: 4;">
+      <div class="rebuttal-mini-label">SIDE A - REBUTTAL 1/2</div>
+    </div>
+    
+    <!-- Main debate card (front) -->
   <div class="card" id="main-card"
     ontouchstart="ts(event)" ontouchmove="tm(event)" ontouchend="te(event)"
-    onmousedown="ms(event)" onmousemove="mm(event)" onmouseup="me(event)" onmouseleave="ml(event)">
+    onmousedown="ms(event)" onmousemove="mm(event)" onmouseup="me(event)" onmouseleave="ml(event)" style="z-index: 5;">
 
     <div class="swipe-label left"  id="sl-l">SIDE A</div>
     <div class="swipe-label right" id="sl-r">SIDE B</div>
     <div class="swipe-label up"    id="sl-u">NEXT</div>
+    <div class="swipe-label down"  id="sl-d">REBUTTAL</div>
+
+    <!-- Fact-Check Badge -->
+    <div class="fact-badge" id="fact-badge">
+      <span class="badge-icon" id="badge-icon">✓</span>
+      <span class="badge-text" id="badge-text">OPINION VERIFIED</span>
+    </div>
 
     <div class="topic" id="topic-text">SHOULD VOTING BE MANDATORY?</div>
+    
+    <!-- Rebuttal Counter -->
+    <div class="rebuttal-counter" id="rebuttal-counter">
+      <span class="rebuttal-side">SIDE A: <span id="rebuttal-a-count">0/2</span></span>
+      <span class="rebuttal-divider">|</span>
+      <span class="rebuttal-side">SIDE B: <span id="rebuttal-b-count">0/2</span></span>
+    </div>
 
     <div class="sides">
       <div class="side side-a" id="side-a" onclick="castVote('A')">
@@ -3415,11 +3733,23 @@
       <button class="card-back-btn" onclick="handlePrevDebate()" title="Previous Debate">
         ←
       </button>
-      <button class="card-create-btn" onclick="openCreate()" title="Create Debate">
+      <button class="card-create-btn" onclick="toggleCreateChoice()" title="Create">
         ＋
       </button>
       <button class="card-options-btn" onclick="toggleOptionsMenu()" title="Options">
         ⋮
+      </button>
+    </div>
+
+    <!-- CREATE CHOICE BUTTONS (Hidden by default) -->
+    <div class="create-choice-row" id="create-choice-row">
+      <button class="create-choice-btn" onclick="openCreateDebate()">
+        <span class="choice-label">CREATE ARGUMENT</span>
+        <span class="choice-cost">1 TOKEN</span>
+      </button>
+      <button class="create-choice-btn rebuttal-choice" id="rebuttal-choice-btn" onclick="openCreateRebuttal()">
+        <span class="choice-label">ADD REBUTTAL</span>
+        <span class="choice-count" id="rebuttal-inline-count">4</span>
       </button>
     </div>
 
@@ -3442,8 +3772,8 @@
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- end card-stack -->
+</div><!-- end card-area -->
 
 <!-- ═══ HELP MENU MODAL ═══ -->
 <div class="modal-overlay" id="help-menu-modal">
@@ -3824,6 +4154,7 @@ const rage = [
 // ═══ STATE ═══
 let isRage=false, rageAccepted=false;
 let idx=0, votedMap={}, userComments={};
+let cardIdx=0; // 0=main, 1=rebuttals 1&2, 2=rebuttals 3&4
 let tokens=10, voteCount=0;
 let aiOpen=false, activeSide=null;
 let interactionCount=0;
@@ -3831,6 +4162,88 @@ let sx=0, sy=0, dragging=false;
 
 // NEW: Collapsible comments & options menu state
 let commentsExpanded = true;
+
+function debates(){ return isRage ? rage : general; }
+
+// ═══ REBUTTALS DATA ═══
+// Rebuttals are ordered chronologically (1-4), not by side
+const rebuttals = {
+  "SHOULD VOTING BE MANDATORY?": [
+    { // Rebuttal 1 - Side A
+      side: 'A',
+      topic: "MANDATORY VOTING PREVENTS TYRANNY OF THE MINORITY",
+      arg: "Your 'freedom not to vote' argument ignores that when only 30% vote, fringe groups dominate. Australia's 95% turnout proves mandatory voting makes politicians serve EVERYONE, not just angry activists. Your small government dies when apathy lets extremists win."
+    },
+    { // Rebuttal 2 - Side A
+      side: 'A',
+      topic: "NON-VOTERS CHOOSE THE OUTCOME BY DEFAULT",
+      arg: "You say 'let people opt out' but non-voters aren't neutral—they're letting others decide for them. That's not freedom, that's abdication. If 50% don't vote, the other 50% choose for everyone. Mandatory voting means YOUR voice counts, not just the loudest minority."
+    },
+    { // Rebuttal 3 - Side B
+      side: 'B',
+      topic: "FORCED PARTICIPATION BREEDS RESENTMENT AND BACKLASH",
+      arg: "Australia's system forces people to show up, but many just donkey-vote or vote randomly out of spite. You want INFORMED citizens, not prisoners marking boxes under threat. Apathetic voters who don't care will make WORSE choices than just staying home."
+    },
+    null // Rebuttal 4 - N/A
+  ],
+  
+  "IS BITCOIN REAL MONEY?": [
+    { // Rebuttal 1 - Side A
+      side: 'A',
+      topic: "VOLATILITY DOESN'T DISQUALIFY IT—GOLD WAS VOLATILE TOO",
+      arg: "You call Bitcoin 'too volatile' but gold fluctuated wildly for decades before stabilizing. El Salvador and companies like MicroStrategy hold billions in BTC. Your 'Ponzi scheme' claim ignores that fiat crashed in Turkey, Argentina, and Venezuela while Bitcoin gave people an escape."
+    },
+    { // Rebuttal 2 - Side B
+      side: 'B',
+      topic: "NO GOVERNMENT BACKING MEANS NO REAL VALUE",
+      arg: "You say 'government money is a Ponzi' but at least the US dollar is backed by the world's largest military and economy. Bitcoin is backed by... hopium? One Elon tweet crashes it 20%. El Salvador's experiment is failing—people REFUSE to use it. That's not money, that's a meme."
+    },
+    { // Rebuttal 3 - Side B
+      side: 'B',
+      topic: "BITCOIN CAN'T FUNCTION AS ACTUAL CURRENCY",
+      arg: "Try buying coffee with Bitcoin—$15 transaction fee and 10-minute wait. Real money is INSTANT and FREE. Your 'store of value' cope is just moving goalposts. Money needs to buy things TODAY, not maybe appreciate in a decade. Bitcoin failed as currency, so now it's 'digital gold.' Pathetic."
+    },
+    null // Rebuttal 4 - N/A
+  ],
+  
+  "IS CANCEL CULTURE JUSTIFIED?": [
+    { // Rebuttal 1 - Side A
+      side: 'A',
+      topic: "ACCOUNTABILITY ISN'T TYRANNY—IT'S CONSEQUENCES",
+      arg: "You say 'mob justice' but ignore that powerful people faced ZERO consequences before social media. Harvey Weinstein got away with rape for decades. Cancel culture is workers finally having power against billionaires and abusers. Your 'due process' protected predators."
+    },
+    null, // Rebuttal 2 - N/A
+    null, // Rebuttal 3 - N/A
+    null  // Rebuttal 4 - N/A
+  ],
+  
+  "SHOULD PEDOPHILES FACE PUBLIC EXECUTION?": [
+    { // Rebuttal 1 - Side A
+      side: 'A',
+      topic: "DETERRENCE ONLY WORKS WITH SWIFT, VISIBLE PUNISHMENT",
+      arg: "You say 'rehabilitation' but sex offender recidivism is 20-50%. Public execution sends a message: touch a kid, you die. Medieval? Maybe. Effective? Absolutely. Singapore executes drug dealers and has almost zero drug crime. Fear works when prison doesn't."
+    },
+    { // Rebuttal 2 - Side A
+      side: 'A',
+      topic: "SOME CRIMES FORFEIT YOUR RIGHT TO LIFE",
+      arg: "Clutching pearls about 'cruel punishment' while kids are traumatized for life is insane. You want taxpayers to fund 3 meals a day for child rapists? Execution is CHEAPER than life imprisonment and morally just. They chose to destroy innocence—they chose death."
+    },
+    { // Rebuttal 3 - Side B
+      side: 'B',
+      topic: "WRONGFUL CONVICTIONS MAKE EXECUTION IRREVERSIBLE",
+      arg: "20% of death row inmates are later exonerated. You want to publicly kill innocent people accused of the worst crime possible? Mob mentality will demand blood even with weak evidence. Once they're dead, 'oops sorry' doesn't cut it. Prison allows for correction."
+    },
+    { // Rebuttal 4 - Side B
+      side: 'B',
+      topic: "PUBLIC EXECUTION DESENSITIZES SOCIETY TO VIOLENCE",
+      arg: "History shows public executions turn into entertainment—crowds cheering, kids watching people die. You want to teach children that state-sanctioned murder is normal? That creates a bloodthirsty culture. Saudi Arabia beheads people publicly and they're not exactly a moral beacon."
+    }
+  ]
+};
+
+function getDebateRebuttals(topic){
+  return rebuttals[topic] || [null, null, null, null];
+}
 
 function debates(){ return isRage ? rage : general; }
 function key(){ return (isRage?'r':'g')+'_'+idx; }
@@ -3909,6 +4322,16 @@ document.addEventListener('click', function(e) {
   const helpModal = document.getElementById('help-menu-modal');
   if (helpModal && helpModal.classList.contains('show') && e.target === helpModal) {
     toggleHelpMenu();
+  }
+  
+  // Close create choice buttons when clicking outside
+  const choiceRow = document.getElementById('create-choice-row');
+  const createBtn = document.querySelector('.card-create-btn');
+  if (window.createChoiceOpen && 
+      !choiceRow.contains(e.target) && 
+      e.target !== createBtn) {
+    choiceRow.classList.remove('show');
+    window.createChoiceOpen = false;
   }
 });
 
@@ -4010,6 +4433,49 @@ function render(){
   renderVotedState();
   renderComments();
   
+  // Update rebuttal counter and cards
+  const counts = getRebuttalCounts();
+  document.getElementById('rebuttal-a-count').textContent = `${counts.sideA}/2`;
+  document.getElementById('rebuttal-b-count').textContent = `${counts.sideB}/2`;
+  
+  // Show/hide rebuttal cards based on counts
+  const rebuttalCards = [
+    { id: 'rebuttal-card-1', side: 'A', num: 1 },
+    { id: 'rebuttal-card-2', side: 'A', num: 2 },
+    { id: 'rebuttal-card-3', side: 'B', num: 1 },
+    { id: 'rebuttal-card-4', side: 'B', num: 2 }
+  ];
+  
+  rebuttalCards.forEach(rc => {
+    const card = document.getElementById(rc.id);
+    const count = rc.side === 'A' ? counts.sideA : counts.sideB;
+    if(count >= rc.num){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  
+  // Update fact-check badge
+  const badge = document.getElementById('fact-badge');
+  const badgeIcon = document.getElementById('badge-icon');
+  const badgeText = document.getElementById('badge-text');
+  
+  // Remove all badge classes
+  badge.classList.remove('verified', 'bypassed', 'challenged', 'hidden');
+  
+  // Set badge based on debate (in real app: from database)
+  // For demo: first debate = bypassed (they paid to post a fact), rest = verified
+  if(idx === 0){
+    badge.classList.add('bypassed');
+    badgeIcon.textContent = '⚠';
+    badgeText.textContent = 'BYPASSED FACT-CHECK';
+  } else {
+    badge.classList.add('verified');
+    badgeIcon.textContent = '✓';
+    badgeText.textContent = 'OPINION VERIFIED';
+  }
+  
   // Show spotlight chip if creator (simulated - first debate is "yours")
   if(idx === 0){
     document.getElementById('spotlight-chip').classList.remove('hidden');
@@ -4027,6 +4493,25 @@ function render(){
   //   card.classList.remove('revealing');
   //   console.log('🎯 REVEAL: Removed revealing class - sides should be visible now');
   // }, 3000);
+}
+
+function viewRebuttal(num){
+  // In real app: load rebuttal content and display
+  // For POC: just show toast
+  const rebuttalNames = {
+    1: 'SIDE A - REBUTTAL 1/2',
+    2: 'SIDE A - REBUTTAL 2/2',
+    3: 'SIDE B - REBUTTAL 1/2',
+    4: 'SIDE B - REBUTTAL 2/2'
+  };
+  
+  toast(`VIEWING: ${rebuttalNames[num]}`, 'yellow');
+  
+  // TODO: In production, this would:
+  // 1. Fade out main card
+  // 2. Bring rebuttal card to front
+  // 3. Load rebuttal content (topic, arguments, comments)
+  // 4. Add "back to main" button
 }
 
 function updateVotes(vA, vB){
@@ -4323,6 +4808,83 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ═══ CREATE ARGUMENT ═══
 let createSide = null;
 
+// Track rebuttal counts per debate (in real app: database)
+window.rebuttalCounts = window.rebuttalCounts || {};
+
+// Add some example rebuttal counts for visibility
+window.rebuttalCounts["SHOULD VOTING BE MANDATORY?"] = { sideA: 2, sideB: 1 };
+window.rebuttalCounts["IS BITCOIN REAL MONEY?"] = { sideA: 1, sideB: 2 };
+window.rebuttalCounts["IS CANCEL CULTURE JUSTIFIED?"] = { sideA: 1, sideB: 0 };
+window.rebuttalCounts["SHOULD PEDOPHILES FACE PUBLIC EXECUTION?"] = { sideA: 2, sideB: 2 };
+
+window.createChoiceOpen = false;
+
+function getRebuttalCounts(){
+  const debateKey = debates()[idx].topic; // Use topic as key for POC
+  if(!window.rebuttalCounts[debateKey]){
+    window.rebuttalCounts[debateKey] = { sideA: 0, sideB: 0 };
+  }
+  return window.rebuttalCounts[debateKey];
+}
+
+function toggleCreateChoice(){
+  const choiceRow = document.getElementById('create-choice-row');
+  
+  if(window.createChoiceOpen){
+    // Close
+    choiceRow.classList.remove('show');
+    window.createChoiceOpen = false;
+  } else {
+    // Open and update rebuttal count
+    const counts = getRebuttalCounts();
+    const totalAvailable = (2 - counts.sideA) + (2 - counts.sideB);
+    const display = document.getElementById('rebuttal-inline-count');
+    const rebuttalBtn = document.getElementById('rebuttal-choice-btn');
+    
+    if(totalAvailable === 0){
+      display.textContent = '0';
+      rebuttalBtn.classList.add('disabled');
+    } else {
+      display.textContent = totalAvailable.toString();
+      rebuttalBtn.classList.remove('disabled');
+    }
+    
+    choiceRow.classList.add('show');
+    window.createChoiceOpen = true;
+  }
+}
+
+function openCreateDebate(){
+  // Close choice buttons
+  document.getElementById('create-choice-row').classList.remove('show');
+  window.createChoiceOpen = false;
+  
+  window.isRebuttal = false;
+  document.getElementById('create-sheet-title').textContent = 'CREATE ARGUMENT';
+  document.getElementById('create-sheet-sub').textContent = 'YOU ARGUE ONE SIDE — SHARE FOR SOMEONE ELSE TO COMPLETE';
+  openCreate();
+}
+
+function openCreateRebuttal(){
+  const counts = getRebuttalCounts();
+  const totalAvailable = (2 - counts.sideA) + (2 - counts.sideB);
+  
+  if(totalAvailable === 0){
+    toast('MAX REBUTTALS REACHED (4 TOTAL)', 'red');
+    return;
+  }
+  
+  // Close choice buttons
+  document.getElementById('create-choice-row').classList.remove('show');
+  window.createChoiceOpen = false;
+  
+  window.isRebuttal = true;
+  const currentTopic = debates()[idx].topic;
+  document.getElementById('create-sheet-title').textContent = 'ADD REBUTTAL';
+  document.getElementById('create-sheet-sub').textContent = `REBUTTAL TO: ${currentTopic}`;
+  openCreate();
+}
+
 function openCreate(){
   document.getElementById('create-token-display').textContent = tokens;
   document.getElementById('create-topic').value = '';
@@ -4389,20 +4951,167 @@ function polishCreateArg(){
   }, 1300);
 }
 
+// Fact-check patterns
+function containsFactualLanguage(text){
+  const factPatterns = [
+    /according to/i,
+    /studies show/i,
+    /research indicates/i,
+    /data shows/i,
+    /statistics show/i,
+    /proven fact/i,
+    /scientifically proven/i,
+    /\d{1,2}%/,  // percentages
+    /in \d{4}/,  // years
+    /\$\d+/,     // dollar amounts
+    /\d+,\d+/    // large numbers with commas
+  ];
+  return factPatterns.some(pattern => pattern.test(text));
+}
+
+async function simulateWebFactCheck(text){
+  // Simulate web search delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // For POC: Check if text contains verifiable facts
+  const verifiableFacts = [
+    /voted for.*in \d{4}/i,
+    /won.*election/i,
+    /\d+% of/i,
+    /studies show/i,
+    /research proves/i,
+    /according to/i,
+    /data shows/i
+  ];
+  
+  const foundFacts = verifiableFacts.filter(pattern => pattern.test(text));
+  
+  if(foundFacts.length > 0){
+    return {
+      isFact: true,
+      confidence: 'high',
+      reason: 'Contains verifiable statistical claims or historical facts'
+    };
+  }
+  
+  return {
+    isFact: false,
+    confidence: 'low',
+    reason: 'Appears to be opinion-based'
+  };
+}
+
 function submitCreate(){
   const topic = document.getElementById('create-topic').value.trim();
   const arg   = document.getElementById('create-arg').value.trim();
   if(!topic)     { toast('ADD A DEBATE QUESTION','red'); return; }
   if(!createSide){ toast('PICK YOUR SIDE FIRST','red'); return; }
   if(!arg)       { toast('WRITE YOUR ARGUMENT','red'); return; }
-  if(tokens < 1) { toast('NOT ENOUGH TOKENS','red'); return; }
-  tokens--;
+  
+  // Check if bypassed
+  const bypassed = window.factCheckBypassed || false;
+  
+  if(!bypassed){
+    // Run fact-check
+    runFactCheck(topic, arg);
+  } else {
+    // Already bypassed, proceed with submission
+    completeSubmission(true);
+  }
+}
+
+async function runFactCheck(topic, arg){
+  const combinedText = `${topic} ${arg}`;
+  
+  // Show loading
+  toast('CHECKING FOR FACTS...', '');
+  
+  // Quick pattern check
+  if(!containsFactualLanguage(combinedText)){
+    // No factual language detected, submit immediately
+    completeSubmission(false);
+    return;
+  }
+  
+  // Simulate web search
+  const result = await simulateWebFactCheck(combinedText);
+  
+  if(result.isFact){
+    // Show fact-check modal with results
+    document.getElementById('factcheck-reason').textContent = result.reason;
+    document.getElementById('factcheck-modal').classList.add('show');
+  } else {
+    // Passed check, submit
+    completeSubmission(false);
+  }
+}
+
+function completeSubmission(bypassed){
+  const isRebuttal = window.isRebuttal || false;
+  
+  // Calculate token cost
+  let cost = 1; // Base cost
+  if(bypassed) cost += 3; // Bypass adds 3 tokens
+  
+  // Rebuttal pricing
+  if(isRebuttal){
+    const counts = getRebuttalCounts();
+    const sideCount = createSide === 'A' ? counts.sideA : counts.sideB;
+    
+    // Check if this side has room
+    if(sideCount >= 2){
+      toast(`SIDE ${createSide} ALREADY HAS 2 REBUTTALS`, 'red');
+      return;
+    }
+    
+    // Pricing: 1st rebuttal = 1 token, 2nd rebuttal = 10 tokens
+    if(sideCount === 1){
+      cost = 10; // 2nd rebuttal is expensive!
+      if(bypassed) cost += 3; // Bypass still adds 3
+    }
+  }
+  
+  if(tokens < cost) { 
+    toast(`NOT ENOUGH TOKENS (NEED ${cost})`, 'red'); 
+    return; 
+  }
+  
+  tokens -= cost;
   document.getElementById('token-count').textContent = tokens;
+  
+  // Update rebuttal count if applicable
+  if(isRebuttal){
+    const counts = getRebuttalCounts();
+    if(createSide === 'A') counts.sideA++;
+    else counts.sideB++;
+  }
+  
+  // Reset flags
+  window.factCheckBypassed = false;
+  window.isRebuttal = false;
+  
   closeModal('create-modal');
   // Generate fake share link for prototype
   const code = Math.random().toString(36).substr(2,8).toUpperCase();
   document.getElementById('share-link-box').textContent = `bate.app/debate/${code}`;
   document.getElementById('share-modal').classList.add('show');
+  
+  // Store badge type
+  window.lastDebateBadge = bypassed ? 'bypassed' : 'verified';
+  
+  if(isRebuttal){
+    toast(`REBUTTAL ${createSide === 'A' ? counts.sideA : counts.sideB}/2 ADDED!`, 'yellow');
+  }
+}
+
+function bypassFactCheck(){
+  if(tokens < 4){
+    toast('NOT ENOUGH TOKENS (NEED 4)', 'red');
+    return;
+  }
+  closeModal('factcheck-modal');
+  window.factCheckBypassed = true;
+  completeSubmission(true); // Submit with bypass flag
 }
 
 function copyShareLink(){
@@ -4438,9 +5147,122 @@ function nativeShare(){
 function nextDebate(){
   const d = debates();
   idx = (idx+1) % d.length;
+  cardIdx = 0; // Reset to main card
   interactionCount++;
   checkSwipeBar();
   render();
+}
+
+function nextRebuttal(){
+  const counts = getRebuttalCounts();
+  const totalRebuttals = counts.sideA + counts.sideB;
+  
+  if(totalRebuttals === 0){
+    toast('NO REBUTTALS FOR THIS DEBATE', '');
+    return;
+  }
+  
+  // Cycle through: 0 (main) → 1 (A1) → 2 (A2) → 3 (B1) → 4 (B2) → back to 0
+  cardIdx = (cardIdx + 1) % 5;
+  
+  // Skip cards that don't exist
+  let attempts = 0;
+  while(!rebuttalExists(cardIdx) && attempts < 5){
+    cardIdx = (cardIdx + 1) % 5;
+    attempts++;
+  }
+  
+  renderCard();
+}
+
+function rebuttalExists(cIdx){
+  if(cIdx === 0) return true; // Main card always exists
+  
+  const counts = getRebuttalCounts();
+  if(cIdx === 1) return counts.sideA >= 1;
+  if(cIdx === 2) return counts.sideA >= 2;
+  if(cIdx === 3) return counts.sideB >= 1;
+  if(cIdx === 4) return counts.sideB >= 2;
+  return false;
+}
+
+function nextRebuttal(){
+  const d = debates()[idx % debates().length];
+  const rebs = getDebateRebuttals(d.topic);
+  
+  // Check if any rebuttals exist
+  const hasRebuttals = rebs.some(r => r !== null);
+  if(!hasRebuttals){
+    toast('NO REBUTTALS FOR THIS DEBATE', '');
+    return;
+  }
+  
+  // Cycle: 0 (main) → 1 (rebuttals 1&2) → 2 (rebuttals 3&4) → 0 (main)
+  cardIdx = (cardIdx + 1) % 3;
+  
+  renderCard();
+}
+
+function renderCard(){
+  const d = debates()[idx % debates().length];
+  const rebs = getDebateRebuttals(d.topic);
+  
+  if(cardIdx === 0){
+    // Show main debate
+    render();
+  } else if(cardIdx === 1){
+    // Show rebuttals 1 & 2
+    showRebuttalPair(rebs[0], rebs[1], 1, 2);
+  } else if(cardIdx === 2){
+    // Show rebuttals 3 & 4
+    showRebuttalPair(rebs[2], rebs[3], 3, 4);
+  }
+}
+
+function showRebuttalPair(reb1, reb2, num1, num2){
+  const d = debates()[idx % debates().length];
+  
+  // Show main topic at top
+  document.getElementById('topic-text').textContent = d.topic;
+  
+  // Side A content
+  let sideAContent, sideALabel;
+  if(reb1 && reb1.side === 'A'){
+    sideALabel = `REBUTTAL ${num1}/4: ${reb1.topic}`;
+    sideAContent = reb1.arg;
+  } else if(reb2 && reb2.side === 'A'){
+    sideALabel = `REBUTTAL ${num2}/4: ${reb2.topic}`;
+    sideAContent = reb2.arg;
+  } else {
+    sideALabel = `REBUTTAL ${num1}/4 or ${num2}/4`;
+    sideAContent = "N/A";
+  }
+  
+  // Side B content
+  let sideBContent, sideBLabel;
+  if(reb1 && reb1.side === 'B'){
+    sideBLabel = `REBUTTAL ${num1}/4: ${reb1.topic}`;
+    sideBContent = reb1.arg;
+  } else if(reb2 && reb2.side === 'B'){
+    sideBLabel = `REBUTTAL ${num2}/4: ${reb2.topic}`;
+    sideBContent = reb2.arg;
+  } else {
+    sideBLabel = `REBUTTAL ${num1}/4 or ${num2}/4`;
+    sideBContent = "N/A";
+  }
+  
+  // Update card display
+  document.getElementById('text-a').textContent = `${sideALabel}\n\n${sideAContent}`;
+  document.getElementById('text-b').textContent = `${sideBLabel}\n\n${sideBContent}`;
+  
+  // Update votes (keep original for now)
+  updateVotes(d.vA, d.vB);
+  
+  // Clear comments
+  document.getElementById('comment-list').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:11px;">REBUTTAL COMMENTS COMING SOON</div>';
+  
+  // Show toast
+  toast(`VIEWING REBUTTALS ${num1} & ${num2}`, 'cyan');
 }
 
 // ═══ SWIPE TOUCH ═══
@@ -4455,20 +5277,29 @@ function tm(e){
     document.getElementById('sl-l').style.opacity = dx<-20 ? Math.min(1,Math.abs(dx)/80) : 0;
     document.getElementById('sl-r').style.opacity = dx>20  ? Math.min(1,dx/80) : 0;
     document.getElementById('sl-u').style.opacity = 0;
+    document.getElementById('sl-d').style.opacity = 0;
   } else if(dy<-40){
     card.classList.remove('swipe-left','swipe-right');
     document.getElementById('sl-u').style.opacity = Math.min(1,Math.abs(dy)/80);
     document.getElementById('sl-l').style.opacity = 0;
     document.getElementById('sl-r').style.opacity = 0;
+    document.getElementById('sl-d').style.opacity = 0;
+  } else if(dy>40){
+    card.classList.remove('swipe-left','swipe-right');
+    document.getElementById('sl-d').style.opacity = Math.min(1,dy/80);
+    document.getElementById('sl-l').style.opacity = 0;
+    document.getElementById('sl-r').style.opacity = 0;
+    document.getElementById('sl-u').style.opacity = 0;
   }
 }
 function te(e){
   const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
   const card=document.getElementById('main-card');
   card.classList.remove('swipe-left','swipe-right');
-  ['sl-l','sl-r','sl-u'].forEach(id=>document.getElementById(id).style.opacity=0);
+  ['sl-l','sl-r','sl-u','sl-d'].forEach(id=>document.getElementById(id).style.opacity=0);
   if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>50) castVote(dx<0?'A':'B');
   else if(dy<-60) nextDebate();
+  else if(dy>60) nextRebuttal();
 }
 
 // ═══ SWIPE MOUSE ═══
@@ -4482,15 +5313,17 @@ function mm(e){
   document.getElementById('sl-l').style.opacity = dx<-20 ? Math.min(1,Math.abs(dx)/80) : 0;
   document.getElementById('sl-r').style.opacity = dx>20  ? Math.min(1,dx/80) : 0;
   document.getElementById('sl-u').style.opacity = dy<-40 ? Math.min(1,Math.abs(dy)/80) : 0;
+  document.getElementById('sl-d').style.opacity = dy>40  ? Math.min(1,dy/80) : 0;
 }
 function me(e){
   if(!dragging) return; dragging=false;
   const dx=e.clientX-sx, dy=e.clientY-sy;
   const card=document.getElementById('main-card');
   card.classList.remove('swipe-left','swipe-right');
-  ['sl-l','sl-r','sl-u'].forEach(id=>document.getElementById(id).style.opacity=0);
+  ['sl-l','sl-r','sl-u','sl-d'].forEach(id=>document.getElementById(id).style.opacity=0);
   if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>50) castVote(dx<0?'A':'B');
   else if(dy<-60) nextDebate();
+  else if(dy>60) nextRebuttal();
 }
 function ml(e){ if(dragging){ dragging=false; me(e); } }
 
