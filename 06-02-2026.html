@@ -4793,10 +4793,9 @@ function render(){
   }
   
   // Show spotlight chip if creator (simulated - first debate is "yours")
-  if(idx === 0){
-    document.getElementById('spotlight-chip').classList.remove('hidden');
-  } else {
-    document.getElementById('spotlight-chip').classList.add('hidden');
+  const spotChip = document.getElementById('spotlight-chip');
+  if(spotChip){
+    spotChip.classList.toggle('hidden', idx !== 0);
   }
   
   // Reset comment input
