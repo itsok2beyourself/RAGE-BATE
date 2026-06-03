@@ -442,11 +442,30 @@
     position: relative;
     overflow: visible;
     touch-action: none;
-    transition: transform 0.08s;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
     cursor: grab;
     min-height: 0;
   }
   .card:active { cursor: grabbing; }
+  
+  /* Rebuttal mode - single card animation */
+  .card.rebuttal-mode {
+    animation: shuffleIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  
+  @keyframes shuffleIn {
+    0% {
+      transform: scale(0.9) translateY(-20px);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.05) translateY(10px);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
 
   /* Remove grid texture */
   .card::before { display: none; }
@@ -473,19 +492,20 @@
 
   /* ── FACT-CHECK BADGE ── */
   .fact-badge {
-    position: absolute;
-    top: 6px;
-    right: 12px;
+    position: relative;
+    align-self: center;
+    margin: 0 0 12px;       /* sits above the topic with a gap */
+    max-width: 90%;          /* never spill past the app width */
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
+    gap: 4px;
+    padding: 3px 10px;
     border-radius: 8px;
     font-size: 8px;
     font-weight: 700;
     letter-spacing: 1px;
     font-family: var(--font-b);
-    z-index: 5;
+    z-index: 100;
     transition: all 0.3s;
     cursor: pointer;
   }
@@ -520,39 +540,45 @@
   }
   
   .badge-icon {
-    font-size: 14px;
+    font-size: 11px;
   }
 
   /* ── REBUTTAL COUNTER ── */
-  .rebuttal-counter {
+  /* ── REBUTTAL VISUAL INDICATOR ── */
+  .rebuttal-dots {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 20px;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: var(--muted);
+  }
+  
+  .rebuttal-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
     font-family: var(--font-b);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s;
   }
   
-  .rebuttal-side {
-    color: var(--muted);
+  .rebuttal-dot.active-a {
+    background: rgba(255, 107, 157, 0.2);
+    border-color: #FF6B9D;
+    color: #FF6B9D;
   }
   
-  .rebuttal-divider {
-    color: rgba(255,255,255,0.2);
-  }
-  
-  #rebuttal-a-count {
-    color: var(--red);
-    font-weight: 700;
-  }
-  
-  #rebuttal-b-count {
-    color: var(--cyan);
-    font-weight: 700;
+  .rebuttal-dot.active-b {
+    background: rgba(92, 212, 255, 0.2);
+    border-color: #5CD4FF;
+    color: #5CD4FF;
   }
 
   /* ── TOPIC ── */
@@ -762,8 +788,12 @@
 
   /* ── VOTE COUNTS ── */
   .vote-counts {
-    display: grid; grid-template-columns: 1fr 1fr;
-    width: 100%; margin-bottom: 14px;
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: 100%; margin-bottom: 14px; gap: 10px;
+  }
+  .vote-controls-center {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
   .vote-num {
     text-align: center;
@@ -1154,14 +1184,10 @@
 
   /* ── CREATE CHOICE ROW ── */
   .create-choice-row {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
     display: none; /* Hidden by default */
-    justify-content: space-between;
+    justify-content: center;
     gap: 8px;
-    z-index: 15;
+    margin: 0 0 12px;
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
   }
@@ -1478,13 +1504,25 @@
   /* scrollable comment list — newest first */
   .comment-list {
     flex: 1;
+    max-height: 118px;            /* show ~2 comments; scroll for the rest */
     overflow-y: auto;
     padding: 6px 0;
     display: flex;
     flex-direction: column;
+    transition: max-height 0.3s ease;
   }
+  .comment-list.expanded { max-height: 320px; }
   .comment-list::-webkit-scrollbar { width: 2px; }
   .comment-list::-webkit-scrollbar-thumb { background: var(--muted); }
+
+  .comment-expand-toggle {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--cyan); cursor: pointer; padding: 2px 7px;
+    border: 1px solid rgba(0,191,255,0.22); border-radius: 10px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .comment-expand-toggle:hover { background: rgba(0,191,255,0.1); }
+  body.rage-mode .comment-expand-toggle { color: var(--red); border-color: rgba(255,45,85,0.3); }
 
   .comment-row {
     display: flex;
@@ -3203,6 +3241,242 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.t-red    { border-color: rgba(255,45,85,0.4);  color: var(--red); }
   .toast.t-yellow { border-color: rgba(255,208,0,0.4);  color: var(--yellow); }
+
+  /* ══════════════════════════════
+     RAGE BUTTON — RED LIGHT LEAK
+     ══════════════════════════════ */
+  .rage-toggle.on {
+    background: linear-gradient(135deg, #2a0008 0%, #4d0012 55%, #2a0008 100%);
+    color: #fff;
+    border: 2px solid #FF2D55;
+    box-shadow:
+      0 0 14px rgba(255,45,85,0.85),
+      0 0 30px rgba(255,0,30,0.45),
+      inset 0 0 12px rgba(255,45,85,0.3);
+    text-shadow: 0 0 10px rgba(255,80,110,0.9);
+    position: relative;
+    overflow: hidden;
+    animation: rageGlowPulse 2.4s ease-in-out infinite;
+  }
+
+  /* soft red light leak drifting across the button */
+  .rage-toggle.on::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background:
+      radial-gradient(circle at 25% 15%, rgba(255,110,140,0.55), transparent 55%),
+      radial-gradient(circle at 80% 90%, rgba(255,40,80,0.45), transparent 60%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: rageLeakDrift 3.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes rageGlowPulse {
+    0%,100% { box-shadow: 0 0 14px rgba(255,45,85,0.8), 0 0 30px rgba(255,0,30,0.4), inset 0 0 12px rgba(255,45,85,0.3); }
+    50%      { box-shadow: 0 0 22px rgba(255,45,85,1), 0 0 48px rgba(255,0,30,0.7), inset 0 0 18px rgba(255,45,85,0.5); }
+  }
+
+  @keyframes rageLeakDrift {
+    0%   { opacity: 0.6; transform: translate(-4%, -3%) scale(1.05); }
+    100% { opacity: 1;   transform: translate(4%, 3%) scale(1.18); }
+  }
+
+  /* ══════════════════════════════
+     FULL-SCREEN RED LIGHT-LEAK OVERLAY
+     ══════════════════════════════ */
+  #rage-leak-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 8999;
+    pointer-events: none;
+    display: none;
+    overflow: hidden;
+    max-width: 390px;
+    left: 0; right: 0; margin: 0 auto;
+  }
+
+  #rage-leak-overlay.show { display: block; }
+
+  .rage-leak {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(55px);
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 1.1s ease, transform 1.4s ease;
+  }
+
+  #rage-leak-overlay.lit .rage-leak {
+    opacity: 1;
+    animation: leakBreathe 3.5s ease-in-out infinite alternate;
+  }
+
+  .leak-tl { width: 360px; height: 360px; top: -140px; left: -120px; transform: scale(0.6);
+    background: radial-gradient(circle, rgba(255,45,85,0.95), rgba(200,0,30,0.4) 45%, transparent 72%); }
+  .leak-tr { width: 320px; height: 320px; top: -100px; right: -120px; transform: scale(0.6);
+    background: radial-gradient(circle, rgba(255,60,100,0.85), rgba(180,0,20,0.35) 45%, transparent 72%); }
+  .leak-bl { width: 380px; height: 380px; bottom: -150px; left: -130px; transform: scale(0.6);
+    background: radial-gradient(circle, rgba(255,40,80,0.8), rgba(170,0,20,0.3) 45%, transparent 72%); }
+  .leak-br { width: 340px; height: 340px; bottom: -120px; right: -120px; transform: scale(0.6);
+    background: radial-gradient(circle, rgba(255,70,110,0.85), rgba(190,0,25,0.35) 45%, transparent 72%); }
+
+  #rage-leak-overlay.lit .leak-tl,
+  #rage-leak-overlay.lit .leak-tr,
+  #rage-leak-overlay.lit .leak-bl,
+  #rage-leak-overlay.lit .leak-br { transform: scale(1); }
+
+  @keyframes leakBreathe {
+    0%   { opacity: 0.55; }
+    100% { opacity: 1; }
+  }
+
+  /* soft global red wash that ramps in smoothly */
+  #rage-leak-tint {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,30,70,0.12) 0%, rgba(140,0,20,0.25) 70%, rgba(90,0,10,0.45) 100%);
+    opacity: 0;
+    transition: opacity 1.1s ease;
+  }
+  #rage-leak-overlay.lit #rage-leak-tint { opacity: 1; }
+
+  #rage-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(150,0,20,0.25) 75%, rgba(120,0,0,0.5) 100%);
+    opacity: 0;
+    transition: opacity 1.1s ease;
+  }
+  #rage-leak-overlay.lit #rage-vignette { opacity: 1; }
+
+  /* ══════════════════════════════
+     QUALIFIED CONDITIONS SECTION
+     ══════════════════════════════ */
+  .qualified-conditions {
+    width: 100%;
+    margin: 10px 0 4px;
+    padding: 0 2px;
+  }
+
+  .qc-sides {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+    gap: 4px;
+    padding-top: 2px;
+  }
+
+  .qc-side { padding: 0 4px; display: flex; flex-direction: column; gap: 4px; }
+
+  .qc-middle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    position: relative;
+  }
+
+  .qc-middle::before {
+    content: '';
+    position: absolute;
+    top: 6px; bottom: 6px; left: 50%;
+    width: 1px; transform: translateX(-50%);
+    background: linear-gradient(to bottom, transparent, rgba(255,208,0,0.3), transparent);
+  }
+
+  .qc-middle-text {
+    position: relative;
+    font-family: var(--font-d);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--yellow);
+    width: 52px;
+    padding: 4px 0;
+    background: var(--navy);
+    text-shadow: 0 0 10px rgba(255,208,0,0.3);
+  }
+
+  .qc-condition {
+    padding: 5px 7px;
+    border-radius: 7px;
+    font-size: 9px;
+    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    animation: conditionFadeIn 0.3s ease;
+  }
+
+  @keyframes conditionFadeIn {
+    from { opacity:0; transform:translateY(-4px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .qc-condition-a {
+    background: rgba(255,45,85,0.07);
+    border: 1px solid rgba(255,45,85,0.22);
+    border-left: 3px solid var(--red);
+    color: rgba(255,107,157,0.9);
+    box-shadow: 0 0 8px rgba(255,45,85,0.09), inset 0 0 6px rgba(255,45,85,0.04);
+  }
+
+  .qc-condition-b {
+    background: rgba(0,191,255,0.05);
+    border: 1px solid rgba(0,191,255,0.18);
+    border-right: 3px solid var(--cyan);
+    color: rgba(92,212,255,0.9);
+    box-shadow: 0 0 8px rgba(0,191,255,0.09), inset 0 0 6px rgba(0,191,255,0.04);
+  }
+
+  body.rage-mode .qc-condition-b {
+    border-color: rgba(255,45,85,0.3);
+    border-right-color: var(--red);
+    color: rgba(255,45,85,0.85);
+    background: rgba(255,45,85,0.06);
+  }
+
+  .qc-condition-rank {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-bottom: 2px;
+    opacity: 0.65;
+  }
+
+  .qc-empty {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    opacity: 0.45;
+    padding: 3px 0;
+    font-style: italic;
+  }
+
+  /* Condition highlight in comment list */
+  .comment-row.is-condition {
+    background: rgba(255,208,0,0.025);
+    border: 1px solid rgba(255,208,0,0.1);
+    border-radius: 8px;
+    margin: 2px 8px;
+    padding: 6px 10px;
+  }
+
+  .condition-badge {
+    display: inline-block;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    padding: 1px 5px;
+    border-radius: 5px;
+    margin-left: 5px;
+    vertical-align: middle;
+    border: 1px solid;
+  }
+
+  .condition-badge-a { background:rgba(255,45,85,0.14); border-color:rgba(255,45,85,0.38); color:var(--red); }
+  .condition-badge-b { background:rgba(0,191,255,0.09); border-color:rgba(0,191,255,0.28); color:var(--cyan); }
 </style>
 </head>
 <body>
@@ -3324,7 +3598,7 @@
         <span class="btn-main">I AM 18+ — ENTER RAGE-BATE</span>
         <span class="btn-sub">Accept unfiltered content</span>
       </button>
-      <button class="rage-cancel-btn" onclick="closeModal('rage-modal')">STAY IN GENERAL MODE</button>
+      <button class="rage-cancel-btn" onclick="cancelRage()">STAY IN GENERAL MODE</button>
     </div>
   </div>
 </div>
@@ -3682,10 +3956,12 @@
     <div class="topic" id="topic-text">SHOULD VOTING BE MANDATORY?</div>
     
     <!-- Rebuttal Counter -->
-    <div class="rebuttal-counter" id="rebuttal-counter">
-      <span class="rebuttal-side">SIDE A: <span id="rebuttal-a-count">0/2</span></span>
-      <span class="rebuttal-divider">|</span>
-      <span class="rebuttal-side">SIDE B: <span id="rebuttal-b-count">0/2</span></span>
+    <!-- Rebuttal Visual Indicator -->
+    <div class="rebuttal-dots" id="rebuttal-dots">
+      <div class="rebuttal-dot" id="dot-1">1</div>
+      <div class="rebuttal-dot" id="dot-2">2</div>
+      <div class="rebuttal-dot" id="dot-3">3</div>
+      <div class="rebuttal-dot" id="dot-4">4</div>
     </div>
 
     <div class="sides">
@@ -3711,6 +3987,11 @@
 
     <div class="vote-counts">
       <div class="vote-num" id="num-a">47</div>
+      <div class="vote-controls-center">
+        <button class="card-back-btn" onclick="handlePrevDebate()" title="Previous Debate">←</button>
+        <button class="card-create-btn" onclick="toggleCreateChoice()" title="Create">＋</button>
+        <button class="card-options-btn" onclick="toggleOptionsMenu()" title="Options">⋮</button>
+      </div>
       <div class="vote-num" id="num-b">53</div>
     </div>
 
@@ -3728,17 +4009,19 @@
       <span class="pb" id="pct-b">53%</span>
     </div>
 
-    <!-- NEW LAYOUT: Back - Create - Options -->
-    <div class="card-controls-row">
-      <button class="card-back-btn" onclick="handlePrevDebate()" title="Previous Debate">
-        ←
-      </button>
-      <button class="card-create-btn" onclick="toggleCreateChoice()" title="Create">
-        ＋
-      </button>
-      <button class="card-options-btn" onclick="toggleOptionsMenu()" title="Options">
-        ⋮
-      </button>
+    <!-- ═══ QUALIFIED CONDITIONS ═══ -->
+    <div class="qualified-conditions" id="qualified-conditions">
+      <div class="qc-sides">
+        <div class="qc-side qc-side-a">
+          <div id="qc-list-a"><div class="qc-empty">No conditions yet</div></div>
+        </div>
+        <div class="qc-middle">
+          <div class="qc-middle-text">YES AS LONG AS…</div>
+        </div>
+        <div class="qc-side qc-side-b">
+          <div id="qc-list-b"><div class="qc-empty">No conditions yet</div></div>
+        </div>
+      </div>
     </div>
 
     <!-- CREATE CHOICE BUTTONS (Hidden by default) -->
@@ -3757,7 +4040,10 @@
     <div class="comment-area">
       <div class="comment-area-header" onclick="toggleComments()">
         <span class="comment-area-title">💬 COMMENTS</span>
-        <span class="comment-toggle-arrow" id="comment-arrow">▼</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="comment-expand-toggle" id="comment-expand-toggle" onclick="event.stopPropagation(); toggleCommentExpand()">⤢ VIEW ALL</span>
+          <span class="comment-toggle-arrow" id="comment-arrow">▼</span>
+        </span>
       </div>
       <div class="comment-area-body" id="comment-body">
         <div class="comment-input-bar">
@@ -4011,7 +4297,9 @@ const general = [
     vA:6500, vB:4500, comments:[
       {side:'AI', user:'AI', text:'Genetic clusters by ancestry confirmed in large-scale studies.'},
       {side:'A', user:'ANON_23andMe', text:'DNA DOESN\'T LIE — RACE IS REAL.'},
-      {side:'B', user:'ANON_SCI', text:'RACE IS A SOCIAL CONSTRUCT USED TO DIVIDE.'}
+      {side:'B', user:'ANON_SCI', text:'RACE IS A SOCIAL CONSTRUCT USED TO DIVIDE.'},
+      {side:'A', user:'ANON_GENE', text:'Yes as long as we mean ancestry clusters, not a social hierarchy.', isCondition:true},
+      {side:'B', user:'ANON_MED', text:'Yes as long as we still track ancestry for medical risk.', isCondition:true}
     ]},
   { topic:"SHOULD VOTING BE MANDATORY?", a:"DEMOCRACY REQUIRES PARTICIPATION.", b:"FORCED VOTING VIOLATES FREEDOM.",
     ai:"Australia has required voting since 1924, achieving 90%+ turnout. Critics cite freedom of conscience — though spoiled ballots are permitted in most mandatory systems.",
@@ -4020,6 +4308,8 @@ const general = [
       {side:'A', user:'ANON_4421', text:'AUSTRALIA HAS DONE IT FOR 100 YEARS. IT WORKS.'},
       {side:'B', user:'ANON_1182', text:'FORCING PEOPLE TO VOTE JUST ADDS UNINFORMED BALLOTS.'},
       {side:'AI', user:'AI', text:'Australia has compulsory voting since 1924 — 90%+ turnout.'},
+      {side:'A', user:'ANON_CIVIC', text:'Yes as long as there is a "none of the above" option.', isCondition:true},
+      {side:'B', user:'ANON_EDU', text:'Yes as long as we fund civic education instead.', isCondition:true},
     ]},
   { topic:"SHOULD AI HAVE RIGHTS?", a:"SENTIENT AI DESERVES PROTECTION.", b:"AI IS PROPERTY, NOT A PERSON.",
     ai:"No AI today has confirmed consciousness. Legal frameworks for non-human rights don't yet exist anywhere in the world.",
@@ -4154,7 +4444,7 @@ const rage = [
 // ═══ STATE ═══
 let isRage=false, rageAccepted=false;
 let idx=0, votedMap={}, userComments={};
-let cardIdx=0; // 0=main, 1=rebuttals 1&2, 2=rebuttals 3&4
+let cardIdx=0; // 0=main, 1-4=individual rebuttals
 let tokens=10, voteCount=0;
 let aiOpen=false, activeSide=null;
 let interactionCount=0;
@@ -4166,74 +4456,74 @@ let commentsExpanded = true;
 function debates(){ return isRage ? rage : general; }
 
 // ═══ REBUTTALS DATA ═══
-// Rebuttals are ordered chronologically (1-4), not by side
+// Rebuttals ordered chronologically (back-and-forth conversation flow)
 const rebuttals = {
   "SHOULD VOTING BE MANDATORY?": [
-    { // Rebuttal 1 - Side A
+    { // Rebuttal 1 - Side A posts first
       side: 'A',
       topic: "MANDATORY VOTING PREVENTS TYRANNY OF THE MINORITY",
       arg: "Your 'freedom not to vote' argument ignores that when only 30% vote, fringe groups dominate. Australia's 95% turnout proves mandatory voting makes politicians serve EVERYONE, not just angry activists. Your small government dies when apathy lets extremists win."
     },
-    { // Rebuttal 2 - Side A
-      side: 'A',
-      topic: "NON-VOTERS CHOOSE THE OUTCOME BY DEFAULT",
-      arg: "You say 'let people opt out' but non-voters aren't neutral—they're letting others decide for them. That's not freedom, that's abdication. If 50% don't vote, the other 50% choose for everyone. Mandatory voting means YOUR voice counts, not just the loudest minority."
-    },
-    { // Rebuttal 3 - Side B
+    { // Rebuttal 2 - Side B responds
       side: 'B',
       topic: "FORCED PARTICIPATION BREEDS RESENTMENT AND BACKLASH",
       arg: "Australia's system forces people to show up, but many just donkey-vote or vote randomly out of spite. You want INFORMED citizens, not prisoners marking boxes under threat. Apathetic voters who don't care will make WORSE choices than just staying home."
     },
-    null // Rebuttal 4 - N/A
+    { // Rebuttal 3 - Side A fires back
+      side: 'A',
+      topic: "NON-VOTERS CHOOSE THE OUTCOME BY DEFAULT",
+      arg: "You say 'let people opt out' but non-voters aren't neutral—they're letting others decide for them. That's not freedom, that's abdication. If 50% don't vote, the other 50% choose for everyone. Mandatory voting means YOUR voice counts, not just the loudest minority."
+    },
+    null // Rebuttal 4 - Side B could respond (none yet)
   ],
   
   "IS BITCOIN REAL MONEY?": [
-    { // Rebuttal 1 - Side A
+    { // Rebuttal 1 - Side A opens
       side: 'A',
       topic: "VOLATILITY DOESN'T DISQUALIFY IT—GOLD WAS VOLATILE TOO",
       arg: "You call Bitcoin 'too volatile' but gold fluctuated wildly for decades before stabilizing. El Salvador and companies like MicroStrategy hold billions in BTC. Your 'Ponzi scheme' claim ignores that fiat crashed in Turkey, Argentina, and Venezuela while Bitcoin gave people an escape."
     },
-    { // Rebuttal 2 - Side B
+    { // Rebuttal 2 - Side B counters
       side: 'B',
       topic: "NO GOVERNMENT BACKING MEANS NO REAL VALUE",
       arg: "You say 'government money is a Ponzi' but at least the US dollar is backed by the world's largest military and economy. Bitcoin is backed by... hopium? One Elon tweet crashes it 20%. El Salvador's experiment is failing—people REFUSE to use it. That's not money, that's a meme."
     },
-    { // Rebuttal 3 - Side B
+    { // Rebuttal 3 - Side B doubles down
       side: 'B',
       topic: "BITCOIN CAN'T FUNCTION AS ACTUAL CURRENCY",
       arg: "Try buying coffee with Bitcoin—$15 transaction fee and 10-minute wait. Real money is INSTANT and FREE. Your 'store of value' cope is just moving goalposts. Money needs to buy things TODAY, not maybe appreciate in a decade. Bitcoin failed as currency, so now it's 'digital gold.' Pathetic."
     },
-    null // Rebuttal 4 - N/A
+    null // Rebuttal 4 - Side A could respond
   ],
   
   "IS CANCEL CULTURE JUSTIFIED?": [
-    { // Rebuttal 1 - Side A
+    { // Rebuttal 1 - Side A posts
       side: 'A',
       topic: "ACCOUNTABILITY ISN'T TYRANNY—IT'S CONSEQUENCES",
       arg: "You say 'mob justice' but ignore that powerful people faced ZERO consequences before social media. Harvey Weinstein got away with rape for decades. Cancel culture is workers finally having power against billionaires and abusers. Your 'due process' protected predators."
     },
-    null, // Rebuttal 2 - N/A
-    null, // Rebuttal 3 - N/A
-    null  // Rebuttal 4 - N/A
+    null, // Rebuttal 2 - Side B hasn't responded
+    null, // Rebuttal 3
+    null  // Rebuttal 4
   ],
   
   "SHOULD PEDOPHILES FACE PUBLIC EXECUTION?": [
-    { // Rebuttal 1 - Side A
+    { // Rebuttal 1 - Side A opens strong
       side: 'A',
       topic: "DETERRENCE ONLY WORKS WITH SWIFT, VISIBLE PUNISHMENT",
       arg: "You say 'rehabilitation' but sex offender recidivism is 20-50%. Public execution sends a message: touch a kid, you die. Medieval? Maybe. Effective? Absolutely. Singapore executes drug dealers and has almost zero drug crime. Fear works when prison doesn't."
     },
-    { // Rebuttal 2 - Side A
-      side: 'A',
-      topic: "SOME CRIMES FORFEIT YOUR RIGHT TO LIFE",
-      arg: "Clutching pearls about 'cruel punishment' while kids are traumatized for life is insane. You want taxpayers to fund 3 meals a day for child rapists? Execution is CHEAPER than life imprisonment and morally just. They chose to destroy innocence—they chose death."
-    },
-    { // Rebuttal 3 - Side B
+    { // Rebuttal 2 - Side B counters
       side: 'B',
       topic: "WRONGFUL CONVICTIONS MAKE EXECUTION IRREVERSIBLE",
       arg: "20% of death row inmates are later exonerated. You want to publicly kill innocent people accused of the worst crime possible? Mob mentality will demand blood even with weak evidence. Once they're dead, 'oops sorry' doesn't cut it. Prison allows for correction."
     },
-    { // Rebuttal 4 - Side B
+    { // Rebuttal 3 - Side A doubles down
+      side: 'A',
+      topic: "SOME CRIMES FORFEIT YOUR RIGHT TO LIFE",
+      arg: "Clutching pearls about 'cruel punishment' while kids are traumatized for life is insane. You want taxpayers to fund 3 meals a day for child rapists? Execution is CHEAPER than life imprisonment and morally just. They chose to destroy innocence—they chose death."
+    },
+    { // Rebuttal 4 - Side B final response
       side: 'B',
       topic: "PUBLIC EXECUTION DESENSITIZES SOCIETY TO VIOLENCE",
       arg: "History shows public executions turn into entertainment—crowds cheering, kids watching people die. You want to teach children that state-sanctioned murder is normal? That creates a bloodthirsty culture. Saudi Arabia beheads people publicly and they're not exactly a moral beacon."
@@ -4269,6 +4559,15 @@ function toggleComments() {
     if (area) area.classList.add('collapsed');
     arrow.textContent = '▶';
   }
+}
+
+// Expand the comment list so you can scroll through everyone's comments
+function toggleCommentExpand() {
+  const list = document.getElementById('comment-list');
+  const btn = document.getElementById('comment-expand-toggle');
+  if(!list) return;
+  const expanded = list.classList.toggle('expanded');
+  if(btn) btn.textContent = expanded ? '⤡ SHOW LESS' : '⤢ VIEW ALL';
 }
 
 // Toggle options menu
@@ -4372,6 +4671,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('welcome-screen').classList.add('hidden');
   document.getElementById('tutorial').classList.add('hidden');
   document.getElementById('help-btn').classList.remove('hidden');
+  seedConditions();
   render();
 });
 
@@ -4433,12 +4733,26 @@ function render(){
   renderVotedState();
   renderComments();
   
-  // Update rebuttal counter and cards
-  const counts = getRebuttalCounts();
-  document.getElementById('rebuttal-a-count').textContent = `${counts.sideA}/2`;
-  document.getElementById('rebuttal-b-count').textContent = `${counts.sideB}/2`;
+  // Update rebuttal dots based on debate rebuttals
+  const rebs = getDebateRebuttals(d.topic);
+  for(let i = 1; i <= 4; i++){
+    const dot = document.getElementById(`dot-${i}`);
+    const reb = rebs[i-1];
+    
+    // Remove all classes
+    dot.classList.remove('active-a', 'active-b');
+    
+    // Add color based on which side posted this rebuttal
+    if(reb){
+      if(reb.side === 'A'){
+        dot.classList.add('active-a');
+      } else {
+        dot.classList.add('active-b');
+      }
+    }
+  }
   
-  // Show/hide rebuttal cards based on counts
+  // Show/hide rebuttal cards based on counts (old logic for peeking cards - can remove later)
   const rebuttalCards = [
     { id: 'rebuttal-card-1', side: 'A', num: 1 },
     { id: 'rebuttal-card-2', side: 'A', num: 2 },
@@ -4448,11 +4762,13 @@ function render(){
   
   rebuttalCards.forEach(rc => {
     const card = document.getElementById(rc.id);
-    const count = rc.side === 'A' ? counts.sideA : counts.sideB;
-    if(count >= rc.num){
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
+    if(card){
+      const count = rc.side === 'A' ? (rebs.filter(r => r && r.side === 'A').length) : (rebs.filter(r => r && r.side === 'B').length);
+      if(count >= rc.num){
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
     }
   });
   
@@ -4477,16 +4793,17 @@ function render(){
   }
   
   // Show spotlight chip if creator (simulated - first debate is "yours")
-  if(idx === 0){
-    document.getElementById('spotlight-chip').classList.remove('hidden');
-  } else {
-    document.getElementById('spotlight-chip').classList.add('hidden');
+  const spotChip = document.getElementById('spotlight-chip');
+  if(spotChip){
+    spotChip.classList.toggle('hidden', idx !== 0);
   }
   
   // Reset comment input
   document.getElementById('c-input').value='';
+  yesAutoActive = false;
   activeSide = votedMap[key()] || null;
   updateSideTag();
+  renderConditions();
   
   // TEMP: Revealing animation disabled
   // setTimeout(() => {
@@ -4589,17 +4906,20 @@ function renderComments(){
   const k = key();
   const d = debates()[idx % debates().length];
   const userC = userComments[k] || [];
-  // seed + user; newest user comments at top, FILTER OUT AI COMMENTS
   const allC = [...userC].reverse().concat(d.comments).filter(c => c.side !== 'AI');
   const list = document.getElementById('comment-list');
   list.innerHTML = allC.map(c => {
     const dotClass = c.side==='A' ? 'dot-a' : 'dot-b';
     const sideLabel = c.side==='A' ? 'A' : 'B';
-    return `<div class="comment-row">
+    const isCond = c.isCondition || isConditionText(c.text);
+    const badge = isCond
+      ? `<span class="condition-badge ${c.side==='A'?'condition-badge-a':'condition-badge-b'}">CONDITION</span>`
+      : '';
+    return `<div class="comment-row${isCond?' is-condition':''}">
       <div class="c-side-dot ${dotClass}" title="Side ${sideLabel}"></div>
       <div class="c-body">
-        <div class="c-user">${c.user} · SIDE ${sideLabel}</div>
-        <div class="c-text">${c.text}</div>
+        <div class="c-user">${c.user} · SIDE ${sideLabel}${badge}</div>
+        <div class="c-text">${escHtml(c.text)}</div>
       </div>
     </div>`;
   }).join('');
@@ -4785,23 +5105,72 @@ function cycleSide(){
 
 function postComment(){
   if(!votedMap[key()]){ toast('VOTE FIRST TO COMMENT','red'); return; }
-  const text = document.getElementById('c-input').value.trim();
-  if(!text){ return; }
+  const rawText = document.getElementById('c-input').value.trim();
+  if(!rawText){ return; }
   if(!activeSide){ toast('TAP SIDE? TO PICK A SIDE','red'); return; }
+
+  const isCond = isConditionText(rawText);
+
+  if(isCond){
+    if(tokens < 3){ toast('CONDITIONS COST 3 TOKENS — NOT ENOUGH!','red'); return; }
+    tokens -= 3;
+    document.getElementById('token-count').textContent = tokens;
+  }
+
   const k = key();
-  if(!userComments[k]) userComments[k]=[];
-  userComments[k].push({ side:activeSide, text:text.toUpperCase(), user:'ANON_'+Math.floor(Math.random()*9999) });
-  document.getElementById('c-input').value='';
+  const commentUser = commentAnonymous
+    ? 'ANON_'+Math.floor(Math.random()*9999)
+    : '@MASTERBATER';
+
+  if(!userComments[k]) userComments[k] = [];
+  userComments[k].push({ side:activeSide, text:rawText.toUpperCase(), user:commentUser, isCondition:isCond });
+
+  if(isCond){
+    if(!conditions[k]) conditions[k] = { A:[], B:[] };
+    const newCond = { text:rawText, user:commentUser, votes:1 };
+    conditions[k][activeSide].push(newCond);
+    // Async bonus check after render so list is current
+    setTimeout(() => checkConditionBonus(activeSide, k, newCond), 50);
+    toast('📋 CONDITION POSTED — 3 TOKENS SPENT','yellow');
+  } else {
+    toast('ARGUMENT POSTED ✓','');
+  }
+
+  document.getElementById('c-input').value = '';
+  yesAutoActive = false;
   interactionCount++;
   checkSwipeBar();
   renderComments();
-  toast('ARGUMENT POSTED ✓','');
+  renderConditions();
 }
 
-// enter key posts
+// enter key posts + yes-autocomplete
 document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('c-input').addEventListener('keydown', e=>{
+  const cinput = document.getElementById('c-input');
+
+  cinput.addEventListener('keydown', e=>{
     if(e.key==='Enter'){ e.preventDefault(); postComment(); }
+  });
+
+  // "Yes as long as..." auto-populate
+  cinput.addEventListener('input', ()=>{
+    const val = cinput.value;
+
+    // Trigger: user typed "yes," or "yes." or "yes " at start
+    if(!yesAutoActive && /^yes[,.\s]\s*$/i.test(val)){
+      cinput.value = 'Yes as long as ';
+      yesAutoActive = true;
+      // Move cursor to end
+      const len = cinput.value.length;
+      cinput.setSelectionRange(len, len);
+      return;
+    }
+
+    // If auto was active but user deleted back past the prefix, cleanly reset
+    if(yesAutoActive && !val.toLowerCase().startsWith('yes as long as')){
+      yesAutoActive = false;
+      // If they deleted all the way back to just "yes" or nothing, leave as-is
+    }
   });
 });
 
@@ -5197,8 +5566,20 @@ function nextRebuttal(){
     return;
   }
   
-  // Cycle: 0 (main) → 1 (rebuttals 1&2) → 2 (rebuttals 3&4) → 0 (main)
-  cardIdx = (cardIdx + 1) % 3;
+  // Cycle: 0 (main) → 1 (reb1) → 2 (reb2) → 3 (reb3) → 4 (reb4) → 0 (main)
+  cardIdx++;
+  
+  // Skip null rebuttals
+  let attempts = 0;
+  while(cardIdx <= 4 && cardIdx > 0 && !rebs[cardIdx - 1] && attempts < 5){
+    cardIdx++;
+    attempts++;
+  }
+  
+  // If we've gone past rebuttal 4, loop back to main
+  if(cardIdx > 4){
+    cardIdx = 0;
+  }
   
   renderCard();
 }
@@ -5206,63 +5587,95 @@ function nextRebuttal(){
 function renderCard(){
   const d = debates()[idx % debates().length];
   const rebs = getDebateRebuttals(d.topic);
+  const card = document.getElementById('main-card');
   
   if(cardIdx === 0){
-    // Show main debate
+    // Show main debate (both sides)
+    card.classList.remove('rebuttal-mode');
     render();
-  } else if(cardIdx === 1){
-    // Show rebuttals 1 & 2
-    showRebuttalPair(rebs[0], rebs[1], 1, 2);
-  } else if(cardIdx === 2){
-    // Show rebuttals 3 & 4
-    showRebuttalPair(rebs[2], rebs[3], 3, 4);
+  } else {
+    // Show single rebuttal (centered)
+    const reb = rebs[cardIdx - 1];
+    
+    if(reb){
+      card.classList.add('rebuttal-mode');
+      showSingleRebuttal(reb, cardIdx);
+    } else {
+      // Skip if null
+      cardIdx = 0;
+      card.classList.remove('rebuttal-mode');
+      render();
+    }
   }
 }
 
-function showRebuttalPair(reb1, reb2, num1, num2){
+function showSingleRebuttal(reb, num){
   const d = debates()[idx % debates().length];
   
-  // Show main topic at top
-  document.getElementById('topic-text').textContent = d.topic;
+  // Update topic to show rebuttal title
+  document.getElementById('topic-text').textContent = reb.topic;
   
-  // Side A content
-  let sideAContent, sideALabel;
-  if(reb1 && reb1.side === 'A'){
-    sideALabel = `REBUTTAL ${num1}/4: ${reb1.topic}`;
-    sideAContent = reb1.arg;
-  } else if(reb2 && reb2.side === 'A'){
-    sideALabel = `REBUTTAL ${num2}/4: ${reb2.topic}`;
-    sideAContent = reb2.arg;
-  } else {
-    sideALabel = `REBUTTAL ${num1}/4 or ${num2}/4`;
-    sideAContent = "N/A";
+  // Side colors
+  const bgColor = reb.side === 'A' ? 'rgba(255, 107, 157, 0.15)' : 'rgba(92, 212, 255, 0.15)';
+  const borderColor = reb.side === 'A' ? 'rgba(255, 107, 157, 0.4)' : 'rgba(92, 212, 255, 0.4)';
+  const labelColor = reb.side === 'A' ? '#FF6B9D' : '#5CD4FF';
+  
+  // Create rebuttal display matching debate side style
+  const rebuttalHTML = `
+    <div style="
+      background: ${bgColor};
+      border: 2px solid ${borderColor};
+      border-radius: 12px;
+      padding: 24px 20px;
+      width: calc(100% - 32px);
+      max-width: 360px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+    ">
+      <div style="
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: ${labelColor};
+        margin-bottom: 20px;
+        font-family: var(--font-b);
+        text-align: center;
+        opacity: 0.8;
+      ">
+        SIDE ${reb.side} — REBUTTAL ${num}/4
+      </div>
+      <div style="
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--white);
+        text-align: left;
+      ">
+        ${reb.arg}
+      </div>
+    </div>
+  `;
+  
+  // Find the sides container and replace it
+  const sidesContainer = document.querySelector('.sides');
+  if(sidesContainer){
+    sidesContainer.innerHTML = rebuttalHTML;
+    sidesContainer.style.display = 'flex';
+    sidesContainer.style.justifyContent = 'center';
+    sidesContainer.style.alignItems = 'center';
+    sidesContainer.style.padding = '40px 16px 0 16px';
   }
   
-  // Side B content
-  let sideBContent, sideBLabel;
-  if(reb1 && reb1.side === 'B'){
-    sideBLabel = `REBUTTAL ${num1}/4: ${reb1.topic}`;
-    sideBContent = reb1.arg;
-  } else if(reb2 && reb2.side === 'B'){
-    sideBLabel = `REBUTTAL ${num2}/4: ${reb2.topic}`;
-    sideBContent = reb2.arg;
-  } else {
-    sideBLabel = `REBUTTAL ${num1}/4 or ${num2}/4`;
-    sideBContent = "N/A";
-  }
-  
-  // Update card display
-  document.getElementById('text-a').textContent = `${sideALabel}\n\n${sideAContent}`;
-  document.getElementById('text-b').textContent = `${sideBLabel}\n\n${sideBContent}`;
-  
-  // Update votes (keep original for now)
+  // Update votes (keep original)
   updateVotes(d.vA, d.vB);
   
   // Clear comments
-  document.getElementById('comment-list').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:11px;">REBUTTAL COMMENTS COMING SOON</div>';
+  const commentList = document.getElementById('comment-list');
+  if(commentList){
+    commentList.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:11px;">REBUTTAL COMMENTS COMING SOON</div>';
+  }
   
   // Show toast
-  toast(`VIEWING REBUTTALS ${num1} & ${num2}`, 'cyan');
+  toast(`REBUTTAL ${num}/4 — SIDE ${reb.side}`, reb.side === 'A' ? 'red' : 'cyan');
 }
 
 // ═══ SWIPE TOUCH ═══
@@ -5478,31 +5891,161 @@ function logout(){
   }
 }
 
+// ═══ RAGE AUDIO ═══
+function playAudio(id){
+  try {
+    const el = document.getElementById(id);
+    if(el){ el.currentTime = 0; el.play().catch(()=>{}); }
+  } catch(e){}
+}
+
+// ═══ RAGE LIGHT-LEAK ANIMATION ═══
+function showLeaks(callback){
+  const overlay = document.getElementById('rage-leak-overlay');
+  overlay.classList.add('show');
+  void overlay.offsetWidth;        // force reflow so the transition runs
+  overlay.classList.add('lit');    // red light leaks shine/bloom in
+  if(callback) setTimeout(callback, 1150);
+}
+
+function fadeOutLeaks(){
+  const overlay = document.getElementById('rage-leak-overlay');
+  overlay.classList.remove('lit');                       // light fades smoothly
+  setTimeout(() => overlay.classList.remove('show'), 1200);
+}
+
 // ═══ RAGE ═══
 function triggerRage(){
-  if(!rageAccepted){ document.getElementById('rage-modal').classList.add('show'); return; }
-  toggleRageMode();
-}
-function enableRage(){
-  rageAccepted=true;
-  closeModal('rage-modal');
-  toggleRageMode();
-}
-function toggleRageMode(){
-  isRage=!isRage; idx=0;
-  const btn=document.getElementById('rage-btn');
-  btn.textContent = isRage ? 'RAGE-BATE (ON)' : 'RAGE-BATE (OFF)';
-  btn.className   = 'rage-toggle'+(isRage?' on':'');
-  
-  // Toggle entire interface theme
   if(isRage){
-    document.body.classList.add('rage-mode');
-  } else {
-    document.body.classList.remove('rage-mode');
+    // Turning OFF — calming breath; red light fades smoothly back to navy
+    playAudio('audio-rage-off');
+    const overlay = document.getElementById('rage-leak-overlay');
+    overlay.classList.add('show');
+    void overlay.offsetWidth;
+    overlay.classList.add('lit');     // brief red wash on top
+    deactivateRageTheme();            // UI reverts to navy beneath it
+    setTimeout(fadeOutLeaks, 300);    // then the red light fades away
+    return;
   }
-  
+  // Turning ON — red light starts to shine in, then show the agreement
+  playAudio('audio-rage-on');
+  showLeaks(() => {
+    if(!rageAccepted){
+      document.getElementById('rage-modal').classList.add('show');
+    } else {
+      activateRageTheme();
+    }
+  });
+}
+
+// User chose to stay in General Mode — fade the red light back out (no crack/leak left behind)
+function cancelRage(){
+  closeModal('rage-modal');
+  fadeOutLeaks();
+}
+
+function enableRage(){
+  rageAccepted = true;
+  closeModal('rage-modal');
+  activateRageTheme();
+}
+
+function activateRageTheme(){
+  isRage = true; idx = 0;
+  const btn = document.getElementById('rage-btn');
+  btn.textContent = 'RAGE-BATE (ON)';
+  btn.className   = 'rage-toggle on';
+  document.body.classList.add('rage-mode');
   render();
-  toast(isRage?'🔥 RAGE-BATE UNLOCKED':'GENERAL MODE','red');
+  toast('🔥 RAGE-BATE UNLOCKED','red');
+  setTimeout(fadeOutLeaks, 300);   // settle into the full red theme
+}
+
+function deactivateRageTheme(){
+  isRage = false; idx = 0;
+  const btn = document.getElementById('rage-btn');
+  btn.textContent = 'RAGE-BATE (OFF)';
+  btn.className   = 'rage-toggle';
+  document.body.classList.remove('rage-mode');
+  render();
+  toast('GENERAL MODE','');
+}
+
+// ═══ CONDITIONS SYSTEM ═══
+let conditions = {};  // conditions[key] = { A: [{text, user, votes}], B: [...] }
+let yesAutoActive = false;
+
+function isConditionText(text){
+  return /yes as long as/i.test(text);
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getTopConditions(side, k, limit=2){
+  const bucket = (conditions[k] || { A:[], B:[] })[side];
+  return bucket.slice().sort((a,b) => b.votes - a.votes).slice(0, limit);
+}
+
+function renderConditions(){
+  const k = key();
+  const topA = getTopConditions('A', k);
+  const topB = getTopConditions('B', k);
+
+  const listA = document.getElementById('qc-list-a');
+  const listB = document.getElementById('qc-list-b');
+  if(!listA || !listB) return;
+
+  listA.innerHTML = topA.length ? topA.map((c,i) => `
+    <div class="qc-condition qc-condition-a">
+      <div class="qc-condition-rank">#${i+1} · ${c.votes} agree${c.votes!==1?'s':''}</div>
+      <div>${escHtml(c.text)}</div>
+    </div>`).join('') : '<div class="qc-empty">No conditions yet</div>';
+
+  listB.innerHTML = topB.length ? topB.map((c,i) => `
+    <div class="qc-condition qc-condition-b">
+      <div class="qc-condition-rank">#${i+1} · ${c.votes} agree${c.votes!==1?'s':''}</div>
+      <div>${escHtml(c.text)}</div>
+    </div>`).join('') : '<div class="qc-empty">No conditions yet</div>';
+}
+
+function checkConditionBonus(side, k, newCond){
+  const top3 = getTopConditions(side, k, 3);
+  if(top3.some(c => c === newCond)){
+    tokens += 8;  // refund 3 + 5 bonus
+    document.getElementById('token-count').textContent = tokens;
+    toast('🏆 CONDITION IN TOP 3! +8 TOKENS', 'yellow');
+  }
+}
+
+// Seed a few example conditions for the first debates (general mode)
+function seedConditions(){
+  conditions['g_0'] = {
+    A: [
+      {text:'Yes as long as we mean genetic ancestry clusters, not a social hierarchy', user:'ANON_GENE', votes:14},
+      {text:'Yes as long as it informs medicine, never discrimination', user:'ANON_DOC', votes:9}
+    ],
+    B: [
+      {text:'Yes as long as we still track ancestry for medical risk', user:'ANON_MED', votes:12},
+      {text:'Yes as long as we never ignore real lived discrimination', user:'ANON_SOC', votes:7}
+    ]
+  };
+  conditions['g_1'] = {
+    A: [
+      {text:'Yes as long as there is a "none of the above" option', user:'ANON_CIVIC', votes:21},
+      {text:'Yes as long as election day is a paid national holiday', user:'ANON_DAY', votes:15},
+      {text:'Yes as long as the fine stays small and symbolic', user:'ANON_FINE', votes:6}
+    ],
+    B: [
+      {text:'Yes as long as we fund civic education instead', user:'ANON_EDU', votes:11},
+      {text:'Yes as long as voter registration is automatic', user:'ANON_REG', votes:8}
+    ]
+  };
+  conditions['g_2'] = {
+    A: [ {text:'Yes as long as the AI proves genuine self-awareness', user:'ANON_MIND', votes:10} ],
+    B: [ {text:'Yes as long as humans stay legally responsible for it', user:'ANON_LAW', votes:13} ]
+  };
 }
 
 // ═══ SHARE ═══
@@ -5649,6 +6192,26 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- ═══ RAGE LIGHT-LEAK OVERLAY ═══ -->
+<div id="rage-leak-overlay">
+  <div id="rage-leak-tint"></div>
+  <div class="rage-leak leak-tl"></div>
+  <div class="rage-leak leak-tr"></div>
+  <div class="rage-leak leak-bl"></div>
+  <div class="rage-leak leak-br"></div>
+  <div id="rage-vignette"></div>
+</div>
+
+<!-- ═══ AUDIO ═══ -->
+<audio id="audio-rage-on" preload="none">
+  <source src="audio/glass-break.mp3" type="audio/mpeg">
+  <source src="audio/glass-break.ogg" type="audio/ogg">
+</audio>
+<audio id="audio-rage-off" preload="none">
+  <source src="audio/yoga-breath.mp3" type="audio/mpeg">
+  <source src="audio/yoga-breath.ogg" type="audio/ogg">
+</audio>
 
 <!-- ═══ BOTTOM NAVIGATION ═══ -->
 <div class="bottom-nav">
