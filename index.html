@@ -63,6 +63,7 @@
     max-width: 390px;
     margin: 0 auto;
     position: relative;
+    transition: background-color 0.5s ease, color 0.5s ease;
   }
 
   /* ── RAGE MODE THEME OVERRIDE ── */
@@ -436,12 +437,12 @@
     background: transparent;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    padding: 20px 0;
+    padding: 4px 0 0;
     position: relative;
     overflow: visible;
-    touch-action: none;
+    touch-action: pan-y;
     transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
     cursor: grab;
     min-height: 0;
@@ -1399,7 +1400,8 @@
   .comment-area-body {
     display: flex;
     flex-direction: column;
-    max-height: 600px;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -1414,6 +1416,8 @@
     background: var(--navy2);
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;       /* fill the space below the debate so more comments show */
+    min-height: 0;
     filter: blur(8px);
     opacity: 0.4;
     transition: filter 0.3s, opacity 0.3s;
@@ -1425,6 +1429,7 @@
   .comment-area.collapsed {
     border-top: none;
     background: transparent;
+    flex: 0 0 auto;       /* don't reserve empty space when collapsed */
   }
   
   /* Unblur after vote is cast and confirmed - FORCE IT */
@@ -1501,28 +1506,20 @@
   }
   .comment-post-btn:hover { color: var(--cyan); }
 
-  /* scrollable comment list — newest first */
+  /* scrollable comment list — newest first; fills the comment area and scrolls */
   .comment-list {
-    flex: 1;
-    max-height: 118px;            /* show ~2 comments; scroll for the rest */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;        /* don't chain scroll to the page */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;                 /* allow finger-scroll without triggering swipe-nav */
     padding: 6px 0;
     display: flex;
     flex-direction: column;
-    transition: max-height 0.3s ease;
   }
-  .comment-list.expanded { max-height: 320px; }
   .comment-list::-webkit-scrollbar { width: 2px; }
   .comment-list::-webkit-scrollbar-thumb { background: var(--muted); }
-
-  .comment-expand-toggle {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-    color: var(--cyan); cursor: pointer; padding: 2px 7px;
-    border: 1px solid rgba(0,191,255,0.22); border-radius: 10px;
-    transition: all 0.2s; white-space: nowrap;
-  }
-  .comment-expand-toggle:hover { background: rgba(0,191,255,0.1); }
-  body.rage-mode .comment-expand-toggle { color: var(--red); border-color: rgba(255,45,85,0.3); }
 
   .comment-row {
     display: flex;
@@ -1600,7 +1597,7 @@
 
   /* Adjust card area to account for newsbar */
   .card-area {
-    padding-top: 88px; /* 60px header + 28px newsbar */
+    padding-top: 10px; /* content moved up; no newsbar present */
   }
 
   /* ── ANALYTICS ICON ON CARD ── */
@@ -3919,24 +3916,7 @@
 <!-- CARD STACK -->
 <div class="card-area">
   <div class="card-stack" id="card-stack">
-    
-    <!-- Rebuttal cards (behind) -->
-    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-4" onclick="viewRebuttal(4)" style="z-index: 1;">
-      <div class="rebuttal-mini-label">SIDE B - REBUTTAL 2/2</div>
-    </div>
-    
-    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-3" onclick="viewRebuttal(3)" style="z-index: 2;">
-      <div class="rebuttal-mini-label">SIDE B - REBUTTAL 1/2</div>
-    </div>
-    
-    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-2" onclick="viewRebuttal(2)" style="z-index: 3;">
-      <div class="rebuttal-mini-label">SIDE A - REBUTTAL 2/2</div>
-    </div>
-    
-    <div class="rebuttal-card rebuttal-peek" id="rebuttal-card-1" onclick="viewRebuttal(1)" style="z-index: 4;">
-      <div class="rebuttal-mini-label">SIDE A - REBUTTAL 1/2</div>
-    </div>
-    
+
     <!-- Main debate card (front) -->
   <div class="card" id="main-card"
     ontouchstart="ts(event)" ontouchmove="tm(event)" ontouchend="te(event)"
@@ -4040,10 +4020,7 @@
     <div class="comment-area">
       <div class="comment-area-header" onclick="toggleComments()">
         <span class="comment-area-title">💬 COMMENTS</span>
-        <span style="display:flex;align-items:center;gap:10px;">
-          <span class="comment-expand-toggle" id="comment-expand-toggle" onclick="event.stopPropagation(); toggleCommentExpand()">⤢ VIEW ALL</span>
-          <span class="comment-toggle-arrow" id="comment-arrow">▼</span>
-        </span>
+        <span class="comment-toggle-arrow" id="comment-arrow">▼</span>
       </div>
       <div class="comment-area-body" id="comment-body">
         <div class="comment-input-bar">
@@ -4559,15 +4536,6 @@ function toggleComments() {
     if (area) area.classList.add('collapsed');
     arrow.textContent = '▶';
   }
-}
-
-// Expand the comment list so you can scroll through everyone's comments
-function toggleCommentExpand() {
-  const list = document.getElementById('comment-list');
-  const btn = document.getElementById('comment-expand-toggle');
-  if(!list) return;
-  const expanded = list.classList.toggle('expanded');
-  if(btn) btn.textContent = expanded ? '⤡ SHOW LESS' : '⤢ VIEW ALL';
 }
 
 // Toggle options menu
@@ -5679,8 +5647,17 @@ function showSingleRebuttal(reb, num){
 }
 
 // ═══ SWIPE TOUCH ═══
-function ts(e){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; }
+let inScrollZone = false;
+function startedInComments(e){
+  const t = e.target;
+  return !!(t && t.closest && t.closest('.comment-area'));
+}
+function ts(e){
+  inScrollZone = startedInComments(e);   // touches in the comments scroll, don't navigate
+  sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+}
 function tm(e){
+  if(inScrollZone) return;               // let the comment list scroll natively
   const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy;
   const card=document.getElementById('main-card');
   if(Math.abs(dx)>Math.abs(dy)){
@@ -5706,6 +5683,7 @@ function tm(e){
   }
 }
 function te(e){
+  if(inScrollZone){ inScrollZone=false; return; }   // was a comment scroll — don't navigate
   const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
   const card=document.getElementById('main-card');
   card.classList.remove('swipe-left','swipe-right');
@@ -5716,9 +5694,9 @@ function te(e){
 }
 
 // ═══ SWIPE MOUSE ═══
-function ms(e){ dragging=true; sx=e.clientX; sy=e.clientY; }
+function ms(e){ inScrollZone = startedInComments(e); dragging=true; sx=e.clientX; sy=e.clientY; }
 function mm(e){
-  if(!dragging) return;
+  if(!dragging || inScrollZone) return;
   const dx=e.clientX-sx, dy=e.clientY-sy;
   const card=document.getElementById('main-card');
   card.classList.toggle('swipe-left', dx<-20);
@@ -5730,6 +5708,7 @@ function mm(e){
 }
 function me(e){
   if(!dragging) return; dragging=false;
+  if(inScrollZone){ inScrollZone=false; return; }
   const dx=e.clientX-sx, dy=e.clientY-sy;
   const card=document.getElementById('main-card');
   card.classList.remove('swipe-left','swipe-right');
@@ -5917,14 +5896,10 @@ function fadeOutLeaks(){
 // ═══ RAGE ═══
 function triggerRage(){
   if(isRage){
-    // Turning OFF — calming breath; red light fades smoothly back to navy
+    // Turning OFF — calming breath; clear any red light, revert to navy/cyan
     playAudio('audio-rage-off');
-    const overlay = document.getElementById('rage-leak-overlay');
-    overlay.classList.add('show');
-    void overlay.offsetWidth;
-    overlay.classList.add('lit');     // brief red wash on top
-    deactivateRageTheme();            // UI reverts to navy beneath it
-    setTimeout(fadeOutLeaks, 300);    // then the red light fades away
+    fadeOutLeaks();          // fade out any lingering red leak overlay (no new red bloom)
+    deactivateRageTheme();   // revert theme to navy/cyan (smoothed by body transition)
     return;
   }
   // Turning ON — red light starts to shine in, then show the agreement
