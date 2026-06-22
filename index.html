@@ -352,7 +352,7 @@
   /* ── CARD AREA ── */
   .card-area {
     flex: 1;
-    padding: 8px 14px 6px;
+    padding: 8px 14px calc(46px + var(--safe-bot)); /* clear the fixed bottom nav */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -551,7 +551,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
   
   .rebuttal-dot {
@@ -590,7 +590,7 @@
     text-align: center;
     color: var(--cyan);
     line-height: 1.3;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
     font-weight: 700;
     text-shadow: 0 0 20px rgba(0,191,255,0.2);
     transition: all 0.5s ease;
@@ -620,7 +620,7 @@
     grid-template-columns: 1fr 1px 1fr;
     align-items: stretch;
     width: 100%;
-    margin-bottom: 32px;
+    margin-bottom: 18px;
     gap: 0;
     min-height: 140px;
     transition: opacity 0.5s ease-in-out;  /* Smooth fade in */
@@ -791,7 +791,7 @@
   .vote-counts {
     display: grid; grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    width: 100%; margin-bottom: 14px; gap: 10px;
+    width: 100%; margin-bottom: 10px; gap: 10px;
   }
   .vote-controls-center {
     display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -799,7 +799,7 @@
   .vote-num {
     text-align: center;
     font-family: var(--font-d);
-    font-size: clamp(44px, 12vw, 62px);
+    font-size: clamp(32px, 9vw, 46px);
     letter-spacing: 0.02em;
     color: rgba(255,255,255,0.15);
     line-height: 1;
@@ -865,6 +865,7 @@
   }
   
   .bar-pct {
+    display: none; /* percentages live in the row below now — no duplicate on the 8px bar */
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -881,10 +882,11 @@
   }
   
   .vote-bar-fill { display: none; } /* Hide old single bar */
-  .vote-pcts { 
-    display: flex; 
-    justify-content: space-between; 
-    font-size: 10px; 
+  .vote-pcts {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    font-size: 10px;
     font-weight: 600; 
     letter-spacing: 0.15em; 
     color: var(--muted); 
@@ -2449,10 +2451,10 @@
   }
 
   .rage-warning-disclaimer {
-    font-size: 11px; line-height: 1.6; text-align: center;
-    color: rgba(255,45,85,0.5); margin-bottom: 24px;
-    padding: 12px; border: 1px dashed rgba(255,45,85,0.2);
-    border-radius: 8px; background: rgba(255,45,85,0.02);
+    font-size: 12px; line-height: 1.6; text-align: center;
+    color: rgba(255,224,230,0.92); margin-bottom: 24px;   /* was 0.5 red on near-black — barely visible */
+    padding: 12px; border: 1px dashed rgba(255,90,120,0.45);
+    border-radius: 8px; background: rgba(255,45,85,0.07);
   }
 
   .rage-warning-actions {
@@ -3352,8 +3354,18 @@
      ══════════════════════════════ */
   .qualified-conditions {
     width: 100%;
-    margin: 10px 0 4px;
+    margin: 8px 0 4px;
     padding: 0 2px;
+    filter: blur(8px);            /* gated until the user votes, like the comments */
+    opacity: 0.45;
+    pointer-events: none;
+    transition: filter 0.3s, opacity 0.3s;
+  }
+  .card.voted .qualified-conditions,
+  .card.vote-confirmed .qualified-conditions {
+    filter: blur(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .qc-sides {
@@ -3474,6 +3486,170 @@
 
   .condition-badge-a { background:rgba(255,45,85,0.14); border-color:rgba(255,45,85,0.38); color:var(--red); }
   .condition-badge-b { background:rgba(0,191,255,0.09); border-color:rgba(0,191,255,0.28); color:var(--cyan); }
+  /* ═══════════════════════════════════════
+     TAG IN  (request → approve → high-five)
+     ═══════════════════════════════════════ */
+  .tagin-side-pick { display:flex; gap:10px; margin-bottom:14px; }
+  .tagin-side-btn {
+    flex:1; padding:12px; border-radius:10px; cursor:pointer;
+    font-family:var(--font-d); font-size:16px; letter-spacing:0.08em;
+    border:2px solid var(--muted); background:transparent; color:var(--muted);
+    transition:all 0.15s;
+  }
+  .tagin-side-btn.sel-a { border-color:var(--red);  color:var(--red);  background:rgba(255,107,157,0.12); }
+  .tagin-side-btn.sel-b { border-color:var(--cyan); color:var(--cyan); background:rgba(0,196,255,0.12); }
+  .tagin-side-btn.full { opacity:0.35; pointer-events:none; }
+  .tagin-preview-count { font-size:9px; letter-spacing:0.1em; color:var(--muted); text-align:right; margin:-8px 0 14px; }
+
+  /* tagged-in badge that lands on a side after approval */
+  .tagged-badge-slot { width:100%; display:flex; justify-content:center; }
+  .tagged-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top:8px; padding:4px 9px; border-radius:20px;
+    font-size:8px; font-weight:700; letter-spacing:0.12em; font-family:var(--font-b);
+    animation: tagBadgePop 0.45s cubic-bezier(0.34,1.7,0.64,1);
+  }
+  .side-a .tagged-badge { background:rgba(255,107,157,0.16); border:1px solid rgba(255,107,157,0.5); color:var(--red); }
+  .side-b .tagged-badge { background:rgba(0,196,255,0.16);  border:1px solid rgba(0,196,255,0.5);  color:var(--cyan); }
+  .tagged-badge .tb-remove { cursor:pointer; opacity:0.55; font-size:10px; margin-left:2px; }
+  .tagged-badge .tb-remove:hover { opacity:1; }
+  @keyframes tagBadgePop { from{transform:scale(0); opacity:0;} to{transform:scale(1); opacity:1;} }
+
+  /* handshake indicator tucked into the corner of the tagged-in side box */
+  .tagged-corner {
+    position:absolute; top:8px; font-size:18px; line-height:1; cursor:pointer; z-index:6;
+    filter: drop-shadow(0 0 7px rgba(255,208,0,0.6));
+    animation: tagBadgePop 0.45s cubic-bezier(0.34,1.7,0.64,1);
+    transition: transform 0.15s;
+  }
+  .tagged-corner.corner-a { left:8px; }
+  .tagged-corner.corner-b { right:8px; }
+  .tagged-corner:hover { transform: scale(1.18); }
+
+  /* ── HIGH-FIVE OVERLAY ── */
+  #highfive-overlay {
+    position:fixed; inset:0; z-index:9500; display:none;
+    align-items:center; justify-content:center;
+    max-width:390px; left:0; right:0; margin:0 auto;
+    background:rgba(2,10,22,0); transition:background 0.25s;
+  }
+  #highfive-overlay.play { display:flex; background:rgba(2,10,22,0.82); }
+  .hf-stage { position:relative; width:100%; height:300px; }
+  #highfive-overlay.play .hf-stage { animation: hfShake 0.5s ease-out 0.38s; }
+
+  .hf-hand {
+    position:absolute; top:50%; left:50%; font-size:96px; line-height:1; opacity:0;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.55));
+  }
+  #highfive-overlay.play .hf-hand-left  { animation: hfLeft  0.55s cubic-bezier(0.45,0,0.25,1.5) forwards; }
+  #highfive-overlay.play .hf-hand-right { animation: hfRight 0.55s cubic-bezier(0.45,0,0.25,1.5) forwards; }
+  @keyframes hfLeft {
+    0%   { opacity:0; transform: translate(-280px,-50%) rotate(-22deg); }
+    55%  { opacity:1; }
+    100% { opacity:1; transform: translate(-46px,-50%) rotate(10deg); }
+  }
+  @keyframes hfRight {
+    0%   { opacity:0; transform: translate(180px,-50%) scaleX(-1) rotate(-22deg); }
+    55%  { opacity:1; }
+    100% { opacity:1; transform: translate(-50px,-50%) scaleX(-1) rotate(10deg); }
+  }
+
+  .hf-flash {
+    position:absolute; top:50%; left:50%; width:46px; height:46px; border-radius:50%;
+    transform:translate(-50%,-50%) scale(0); opacity:0;
+    background:radial-gradient(circle, rgba(255,255,255,0.95), rgba(0,196,255,0.5) 42%, transparent 70%);
+  }
+  #highfive-overlay.play .hf-flash { animation: hfFlash 0.6s ease-out 0.36s forwards; }
+  @keyframes hfFlash { 0%{transform:translate(-50%,-50%) scale(0); opacity:0;} 18%{opacity:1;} 100%{transform:translate(-50%,-50%) scale(7); opacity:0;} }
+
+  .hf-ring {
+    position:absolute; top:50%; left:50%; width:64px; height:64px; border-radius:50%;
+    border:3px solid var(--cyan); transform:translate(-50%,-50%) scale(0); opacity:0;
+  }
+  #highfive-overlay.play .hf-ring { animation: hfRing 0.6s ease-out 0.4s forwards; }
+  @keyframes hfRing { 0%{transform:translate(-50%,-50%) scale(0); opacity:0;} 25%{opacity:1;} 100%{transform:translate(-50%,-50%) scale(4.2); opacity:0;} }
+
+  .hf-burst { position:absolute; top:50%; left:50%; width:0; height:0; }
+  .hf-ray {
+    position:absolute; left:-2px; bottom:0; width:4px; height:0; border-radius:2px;
+    background:linear-gradient(to top, rgba(255,224,102,0), var(--yellow));
+    transform-origin:50% 100%;
+  }
+  .hf-ray:nth-child(1){ transform:rotate(0deg); }
+  .hf-ray:nth-child(2){ transform:rotate(45deg); }
+  .hf-ray:nth-child(3){ transform:rotate(90deg); }
+  .hf-ray:nth-child(4){ transform:rotate(135deg); }
+  .hf-ray:nth-child(5){ transform:rotate(180deg); }
+  .hf-ray:nth-child(6){ transform:rotate(225deg); }
+  .hf-ray:nth-child(7){ transform:rotate(270deg); }
+  .hf-ray:nth-child(8){ transform:rotate(315deg); }
+  #highfive-overlay.play .hf-ray { animation: hfRay 0.55s ease-out 0.4s forwards; }
+  @keyframes hfRay { 0%{height:0; opacity:0;} 28%{opacity:1;} 100%{height:74px; opacity:0;} }
+
+  .hf-text {
+    position:absolute; top:calc(50% + 64px); left:50%; transform:translate(-50%,0) scale(0); opacity:0;
+    font-family:var(--font-d); font-size:44px; letter-spacing:0.1em; color:#fff;
+    text-shadow:0 0 26px rgba(0,196,255,0.85); white-space:nowrap;
+  }
+  #highfive-overlay.play .hf-text { animation: hfText 0.5s cubic-bezier(0.34,1.7,0.64,1) 0.45s forwards; }
+  @keyframes hfText { 0%{transform:translate(-50%,0) scale(0); opacity:0;} 60%{transform:translate(-50%,0) scale(1.15); opacity:1;} 100%{transform:translate(-50%,0) scale(1); opacity:1;} }
+
+  .hf-sub {
+    position:absolute; top:calc(50% + 116px); left:50%; transform:translateX(-50%); opacity:0;
+    font-size:12px; font-weight:700; letter-spacing:0.15em; color:var(--cyan); white-space:nowrap;
+  }
+  #highfive-overlay.play .hf-sub { animation: hfSub 0.4s ease-out 0.72s forwards; }
+  @keyframes hfSub { from{opacity:0; transform:translateX(-50%) translateY(8px);} to{opacity:1; transform:translateX(-50%) translateY(0);} }
+
+  @keyframes hfShake {
+    0%,100%{transform:translate(0,0);} 20%{transform:translate(-6px,3px);}
+    40%{transform:translate(6px,-2px);} 60%{transform:translate(-4px,2px);} 80%{transform:translate(3px,-1px);}
+  }
+
+  /* ═══════════════════════════════════════
+     ARGUMENT CARDS (rebuttals + tagged-in)
+     ═══════════════════════════════════════ */
+  /* dots are now tappable buttons */
+  .rebuttal-dot { cursor:pointer; padding:0; font-family:var(--font-b); }
+  .rebuttal-dot.dot-tagged { background:rgba(255,208,0,0.18); border-color:rgba(255,208,0,0.55); color:var(--yellow); font-size:13px; }
+  .rebuttal-dot.current { box-shadow:0 0 0 2px rgba(255,255,255,0.75); transform:scale(1.12); }
+  .rebuttal-dot:hover { transform:scale(1.12); }
+
+  /* card-view mode: hide the main debate, show one argument card */
+  #card-panel { display:none; width:100%; flex-direction:column; gap:14px; padding:0 4px; }
+  .card.card-mode #card-panel { display:flex; }
+  .card.card-mode .sides,
+  .card.card-mode .vote-counts,
+  .card.card-mode #create-choice-row,
+  .card.card-mode .vote-bar-track,
+  .card.card-mode .vote-pcts,
+  .card.card-mode #qualified-conditions,
+  .card.card-mode .comment-area { display:none !important; }
+
+  .card-box {
+    width:100%; box-sizing:border-box; border-radius:14px; padding:18px 18px 20px;
+    background:rgba(0,196,255,0.06); border:1.5px solid rgba(0,196,255,0.35);
+    box-shadow:0 4px 20px rgba(0,0,0,0.25);
+    animation: shuffleIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .card-box.cardbox-a { background:rgba(255,107,157,0.08); border-color:rgba(255,107,157,0.4); }
+  .card-box.cardbox-b { background:rgba(0,196,255,0.08);  border-color:rgba(0,196,255,0.4); }
+  .card-box-label { font-size:9px; font-weight:700; letter-spacing:0.22em; font-family:var(--font-b); margin-bottom:10px; text-align:center; }
+  .cardbox-a .card-box-label { color:var(--red); }
+  .cardbox-b .card-box-label { color:var(--cyan); }
+  .card-box-title { font-family:'Courier New',monospace; font-size:14px; font-weight:700; line-height:1.4; color:var(--white); text-align:center; margin-bottom:12px; }
+  .card-box-body { font-size:13px; line-height:1.65; color:rgba(240,244,255,0.86); }
+  .card-nav { display:flex; gap:10px; }
+  .card-nav-btn {
+    flex:1; padding:11px; border-radius:10px; cursor:pointer;
+    background:rgba(0,196,255,0.08); border:1px solid var(--cyan-dim); color:var(--cyan);
+    font-family:var(--font-d); font-size:13px; letter-spacing:0.08em; transition:all 0.2s;
+  }
+  .card-nav-btn:hover { background:rgba(0,196,255,0.16); border-color:var(--cyan); }
+  .card-nav-btn.next { background:var(--cyan); color:var(--navy); border-color:var(--cyan); }
+  .card-nav-btn.next:hover { background:var(--cyan2); }
+  body.rage-mode .card-nav-btn { color:var(--red); border-color:rgba(255,45,85,0.4); }
+  body.rage-mode .card-nav-btn.next { background:var(--red); color:#fff; }
 </style>
 </head>
 <body>
@@ -3935,14 +4111,8 @@
 
     <div class="topic" id="topic-text">SHOULD VOTING BE MANDATORY?</div>
     
-    <!-- Rebuttal Counter -->
-    <!-- Rebuttal Visual Indicator -->
-    <div class="rebuttal-dots" id="rebuttal-dots">
-      <div class="rebuttal-dot" id="dot-1">1</div>
-      <div class="rebuttal-dot" id="dot-2">2</div>
-      <div class="rebuttal-dot" id="dot-3">3</div>
-      <div class="rebuttal-dot" id="dot-4">4</div>
-    </div>
+    <!-- Card-navigation dots — rebuttals + tagged-in responses (built in renderCardDots) -->
+    <div class="rebuttal-dots" id="rebuttal-dots"></div>
 
     <div class="sides">
       <div class="side side-a" id="side-a" onclick="castVote('A')">
@@ -3950,6 +4120,7 @@
           SIDE A <span class="side-username">@MasterBater</span>
         </div>
         <div class="side-text" id="text-a">DEMOCRACY REQUIRES PARTICIPATION.</div>
+        <div class="tagged-badge-slot" id="tagged-a"></div>
       </div>
 
       <div class="vs-wrap">
@@ -3962,8 +4133,12 @@
           SIDE B <span class="side-username">@DebateKing</span>
         </div>
         <div class="side-text" id="text-b">FORCED VOTING VIOLATES FREEDOM.</div>
+        <div class="tagged-badge-slot" id="tagged-b"></div>
       </div>
     </div>
+
+    <!-- Single argument card (rebuttal or tagged-in response) shown in card-mode -->
+    <div id="card-panel"></div>
 
     <div class="vote-counts">
       <div class="vote-num" id="num-a">47</div>
@@ -3973,6 +4148,18 @@
         <button class="card-options-btn" onclick="toggleOptionsMenu()" title="Options">⋮</button>
       </div>
       <div class="vote-num" id="num-b">53</div>
+    </div>
+
+    <!-- CREATE CHOICE BUTTONS (Hidden by default) — appears right under the + button -->
+    <div class="create-choice-row" id="create-choice-row">
+      <button class="create-choice-btn" onclick="openCreateDebate()">
+        <span class="choice-label">CREATE ARGUMENT</span>
+        <span class="choice-cost">1 TOKEN</span>
+      </button>
+      <button class="create-choice-btn rebuttal-choice" id="rebuttal-choice-btn" onclick="openCreateRebuttal()">
+        <span class="choice-label">ADD REBUTTAL</span>
+        <span class="choice-count" id="rebuttal-inline-count">4</span>
+      </button>
     </div>
 
     <div class="vote-bar-track">
@@ -3987,33 +4174,6 @@
       <span class="pa" id="pct-a">47%</span>
       <span id="total-votes" style="color:var(--muted)">100 votes</span>
       <span class="pb" id="pct-b">53%</span>
-    </div>
-
-    <!-- ═══ QUALIFIED CONDITIONS ═══ -->
-    <div class="qualified-conditions" id="qualified-conditions">
-      <div class="qc-sides">
-        <div class="qc-side qc-side-a">
-          <div id="qc-list-a"><div class="qc-empty">No conditions yet</div></div>
-        </div>
-        <div class="qc-middle">
-          <div class="qc-middle-text">YES AS LONG AS…</div>
-        </div>
-        <div class="qc-side qc-side-b">
-          <div id="qc-list-b"><div class="qc-empty">No conditions yet</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CREATE CHOICE BUTTONS (Hidden by default) -->
-    <div class="create-choice-row" id="create-choice-row">
-      <button class="create-choice-btn" onclick="openCreateDebate()">
-        <span class="choice-label">CREATE ARGUMENT</span>
-        <span class="choice-cost">1 TOKEN</span>
-      </button>
-      <button class="create-choice-btn rebuttal-choice" id="rebuttal-choice-btn" onclick="openCreateRebuttal()">
-        <span class="choice-label">ADD REBUTTAL</span>
-        <span class="choice-count" id="rebuttal-inline-count">4</span>
-      </button>
     </div>
 
     <!-- COMMENT AREA - COLLAPSIBLE -->
@@ -4061,7 +4221,11 @@
 <div class="modal-overlay" id="options-menu-modal">
   <div class="modal-sheet">
     <div style="text-align:center; font-size:12px; letter-spacing:2px; color:var(--muted); margin-bottom:20px; font-weight:700;">OPTIONS</div>
-    
+
+    <button class="menu-btn" onclick="toggleOptionsMenu(); openTagInRequest();">
+      <span style="margin-right:12px;">🤝</span> Request to Tag In
+    </button>
+
     <button class="menu-btn" onclick="openAnalytics(); toggleOptionsMenu();">
       <span style="margin-right:12px;">📊</span> View Analytics
     </button>
@@ -4263,6 +4427,66 @@
 </div>
 
 <!-- Bottom nav removed - create button is now in card controls -->
+
+<!-- ═══ TAG IN — REQUEST MODAL ═══ -->
+<div class="modal-overlay" id="tagin-request-modal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" style="color:var(--yellow)">🤝 TAG IN</div>
+    <div class="sheet-sub">REQUEST TO JOIN — THE ORIGINAL DEBATER APPROVES</div>
+
+    <div class="create-field-label lbl-q">WHICH SIDE DO YOU WANT?</div>
+    <div class="tagin-side-pick">
+      <button class="tagin-side-btn" id="tagin-pick-a" onclick="pickTagSide('A')">← SIDE A</button>
+      <button class="tagin-side-btn" id="tagin-pick-b" onclick="pickTagSide('B')">SIDE B →</button>
+    </div>
+
+    <div class="create-field-label lbl-q">YOUR ARGUMENT PREVIEW</div>
+    <textarea class="create-input" id="tagin-preview" rows="3" placeholder="2–3 sentences making your case to join this side..." maxlength="180" oninput="taginCount()"></textarea>
+    <div class="tagin-preview-count" id="tagin-cc">0 / 180</div>
+
+    <div class="token-note">🤝 1 PERSON PER SIDE &nbsp;·&nbsp; TAGGED IN GETS <span>1 RESPONSE + 1 REBUTTAL</span></div>
+
+    <button class="sheet-btn primary" onclick="submitTagInRequest()">SEND REQUEST</button>
+    <button class="sheet-btn ghost" onclick="closeModal('tagin-request-modal')">CANCEL</button>
+  </div>
+</div>
+
+<!-- ═══ TAG IN — APPROVAL MODAL (original debater) ═══ -->
+<div class="modal-overlay" id="tagin-approve-modal">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" style="color:var(--yellow)">🔔 TAG-IN REQUEST</div>
+    <div class="sheet-sub">SOMEONE WANTS TO JOIN YOUR DEBATE</div>
+
+    <div style="padding:16px; background:rgba(255,208,0,0.05); border:1px solid rgba(255,208,0,0.2); border-radius:12px; margin-bottom:18px;">
+      <div style="font-size:10px; letter-spacing:0.15em; color:var(--muted); margin-bottom:8px;">
+        <span id="tagin-req-user" style="color:var(--yellow); font-weight:700;">@Viewer</span>
+        &nbsp;·&nbsp; WANTS <span id="tagin-req-side" style="color:var(--white); font-weight:700;">SIDE A</span>
+      </div>
+      <div id="tagin-req-preview" style="font-size:14px; line-height:1.6; color:var(--white);">…</div>
+    </div>
+
+    <button class="sheet-btn primary" onclick="acceptTagIn()">✓ ACCEPT — TAG THEM IN</button>
+    <button class="sheet-btn ghost" onclick="rejectTagIn()">✕ REJECT</button>
+  </div>
+</div>
+
+<!-- ═══ HIGH-FIVE ANIMATION OVERLAY ═══ -->
+<div id="highfive-overlay">
+  <div class="hf-stage">
+    <div class="hf-ring"></div>
+    <div class="hf-flash"></div>
+    <div class="hf-burst">
+      <span class="hf-ray"></span><span class="hf-ray"></span><span class="hf-ray"></span><span class="hf-ray"></span>
+      <span class="hf-ray"></span><span class="hf-ray"></span><span class="hf-ray"></span><span class="hf-ray"></span>
+    </div>
+    <div class="hf-hand hf-hand-left">✋</div>
+    <div class="hf-hand hf-hand-right">✋</div>
+    <div class="hf-text">TAGGED IN!</div>
+    <div class="hf-sub" id="hf-sub">@you joined</div>
+  </div>
+</div>
 
 <div class="toast" id="toast-el"></div>
 
@@ -4639,7 +4863,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('welcome-screen').classList.add('hidden');
   document.getElementById('tutorial').classList.add('hidden');
   document.getElementById('help-btn').classList.remove('hidden');
-  seedConditions();
   render();
 });
 
@@ -4700,45 +4923,12 @@ function render(){
   updateVotes(d.vA, d.vB);
   renderVotedState();
   renderComments();
+  renderTaggedBadges();
   
-  // Update rebuttal dots based on debate rebuttals
-  const rebs = getDebateRebuttals(d.topic);
-  for(let i = 1; i <= 4; i++){
-    const dot = document.getElementById(`dot-${i}`);
-    const reb = rebs[i-1];
-    
-    // Remove all classes
-    dot.classList.remove('active-a', 'active-b');
-    
-    // Add color based on which side posted this rebuttal
-    if(reb){
-      if(reb.side === 'A'){
-        dot.classList.add('active-a');
-      } else {
-        dot.classList.add('active-b');
-      }
-    }
-  }
-  
-  // Show/hide rebuttal cards based on counts (old logic for peeking cards - can remove later)
-  const rebuttalCards = [
-    { id: 'rebuttal-card-1', side: 'A', num: 1 },
-    { id: 'rebuttal-card-2', side: 'A', num: 2 },
-    { id: 'rebuttal-card-3', side: 'B', num: 1 },
-    { id: 'rebuttal-card-4', side: 'B', num: 2 }
-  ];
-  
-  rebuttalCards.forEach(rc => {
-    const card = document.getElementById(rc.id);
-    if(card){
-      const count = rc.side === 'A' ? (rebs.filter(r => r && r.side === 'A').length) : (rebs.filter(r => r && r.side === 'B').length);
-      if(count >= rc.num){
-        card.classList.remove('hidden');
-      } else {
-        card.classList.add('hidden');
-      }
-    }
-  });
+  // exit any open argument card and rebuild the card-navigation dots
+  document.getElementById('main-card').classList.remove('card-mode');
+  cardIdx = 0;
+  renderCardDots();
   
   // Update fact-check badge
   const badge = document.getElementById('fact-badge');
@@ -4771,8 +4961,7 @@ function render(){
   yesAutoActive = false;
   activeSide = votedMap[key()] || null;
   updateSideTag();
-  renderConditions();
-  
+
   // TEMP: Revealing animation disabled
   // setTimeout(() => {
   //   card.classList.remove('revealing');
@@ -4813,7 +5002,11 @@ function updateVotes(vA, vB){
   document.getElementById('bar-b').style.width = pB + '%';
   document.getElementById('bar-pct-a').textContent = pA+'%';
   document.getElementById('bar-pct-b').textContent = pB+'%';
-  
+
+  // Keep the percentage row in sync with the bars (was showing stale 47/53)
+  document.getElementById('pct-a').textContent = pA+'%';
+  document.getElementById('pct-b').textContent = pB+'%';
+
   // Update total votes text
   document.getElementById('total-votes').textContent = fmt(total)+' votes';
   
@@ -4892,6 +5085,99 @@ function renderComments(){
     </div>`;
   }).join('');
 }
+
+// ═══ TAG IN ═══
+// tagState[key] = { A: {user,preview,responseUsed,rebuttalUsed} | null, B: {...} | null }
+let tagState = {};
+let tagPick = null;        // side chosen in the request modal
+let pendingTagReq = null;  // request awaiting the debater's approval
+
+function getTag(){ const k = key(); if(!tagState[k]) tagState[k] = { A:null, B:null }; return tagState[k]; }
+function taginUser(){ const el = document.getElementById('display-username'); return '@' + (el ? el.textContent.trim() : 'You'); }
+
+function openTagInRequest(){
+  if(isRage){ toast('TAG IN IS DISABLED IN RAGE-BATE','red'); return; }   // rule: off in rage mode
+  const t = getTag();
+  if(t.A && t.B){ toast('BOTH SIDES ALREADY TAGGED IN',''); return; }
+  tagPick = null;
+  document.getElementById('tagin-preview').value = '';
+  taginCount();
+  const pa = document.getElementById('tagin-pick-a'), pb = document.getElementById('tagin-pick-b');
+  pa.className = 'tagin-side-btn' + (t.A ? ' full' : ''); pa.textContent = t.A ? 'SIDE A FULL' : '← SIDE A';
+  pb.className = 'tagin-side-btn' + (t.B ? ' full' : ''); pb.textContent = t.B ? 'SIDE B FULL' : 'SIDE B →';
+  document.getElementById('tagin-request-modal').classList.add('show');
+}
+
+function pickTagSide(s){
+  const t = getTag();
+  if((s === 'A' && t.A) || (s === 'B' && t.B)) return;   // can't pick a full side
+  tagPick = s;
+  const pa = document.getElementById('tagin-pick-a'), pb = document.getElementById('tagin-pick-b');
+  pa.className = 'tagin-side-btn' + (t.A ? ' full' : '') + (s === 'A' ? ' sel-a' : '');
+  pb.className = 'tagin-side-btn' + (t.B ? ' full' : '') + (s === 'B' ? ' sel-b' : '');
+}
+
+function taginCount(){
+  const v = document.getElementById('tagin-preview').value;
+  document.getElementById('tagin-cc').textContent = v.length + ' / 180';
+}
+
+function submitTagInRequest(){
+  const preview = document.getElementById('tagin-preview').value.trim();
+  if(!tagPick){ toast('PICK A SIDE FIRST','red'); return; }
+  if(preview.length < 10){ toast('WRITE A SHORT PREVIEW FIRST','red'); return; }
+  pendingTagReq = { side: tagPick, preview, user: '@You', debateKey: key() };
+  closeModal('tagin-request-modal');
+  // Production: this fires a realtime notification to the original debater.
+  // Prototype: surface the debater's approval view so you can see the whole loop.
+  document.getElementById('tagin-req-user').textContent = pendingTagReq.user;
+  document.getElementById('tagin-req-side').textContent = 'SIDE ' + pendingTagReq.side;
+  document.getElementById('tagin-req-preview').textContent = pendingTagReq.preview;
+  toast('REQUEST SENT TO THE DEBATER','yellow');
+  setTimeout(() => document.getElementById('tagin-approve-modal').classList.add('show'), 450);
+}
+
+function rejectTagIn(){ closeModal('tagin-approve-modal'); pendingTagReq = null; toast('REQUEST REJECTED','red'); }
+
+function acceptTagIn(){
+  if(!pendingTagReq) return;
+  const k = pendingTagReq.debateKey;
+  if(!tagState[k]) tagState[k] = { A:null, B:null };
+  tagState[k][pendingTagReq.side] = { user: pendingTagReq.user, preview: pendingTagReq.preview, responseUsed:false, rebuttalUsed:false };
+  const side = pendingTagReq.side, user = pendingTagReq.user;
+  closeModal('tagin-approve-modal');
+  pendingTagReq = null;
+  playHighFive(side, user);
+}
+
+function playHighFive(side, user){
+  const ov = document.getElementById('highfive-overlay');
+  document.getElementById('hf-sub').textContent = user + ' JOINED SIDE ' + side;
+  ov.classList.remove('play'); void ov.offsetWidth; ov.classList.add('play');   // restart the animation
+  setTimeout(() => {
+    ov.classList.remove('play');
+    renderTaggedBadges();
+    renderCardDots();   // tagged response now appears as the top card/dot
+    toast('🤝 ' + user + ' TAGGED IN — SIDE ' + side, side === 'A' ? 'red' : 'cyan');
+  }, 1900);
+}
+
+function renderTaggedBadges(){
+  const t = getTag();
+  ['A','B'].forEach(s => {
+    const slot = document.getElementById('tagged-' + s.toLowerCase());
+    if(!slot) return;
+    const info = t[s];
+    if(info && !isRage){   // tagged indicator never shows in rage mode
+      slot.innerHTML = '<span class="tagged-corner corner-' + s.toLowerCase() + '" title="' + info.user +
+        ' tagged in — tap to remove" onclick="event.stopPropagation(); removeTaggedIn(\'' + s + '\')">🤝</span>';
+    } else {
+      slot.innerHTML = '';
+    }
+  });
+}
+
+function removeTaggedIn(s){ getTag()[s] = null; renderTaggedBadges(); renderCardDots(); toast('TAGGED USER REMOVED',''); }
 
 // ═══ VOTING ═══
 // Vote confirmation setting
@@ -5093,23 +5379,13 @@ function postComment(){
   if(!userComments[k]) userComments[k] = [];
   userComments[k].push({ side:activeSide, text:rawText.toUpperCase(), user:commentUser, isCondition:isCond });
 
-  if(isCond){
-    if(!conditions[k]) conditions[k] = { A:[], B:[] };
-    const newCond = { text:rawText, user:commentUser, votes:1 };
-    conditions[k][activeSide].push(newCond);
-    // Async bonus check after render so list is current
-    setTimeout(() => checkConditionBonus(activeSide, k, newCond), 50);
-    toast('📋 CONDITION POSTED — 3 TOKENS SPENT','yellow');
-  } else {
-    toast('ARGUMENT POSTED ✓','');
-  }
+  toast(isCond ? '📋 CONDITION POSTED — 3 TOKENS SPENT' : 'ARGUMENT POSTED ✓', isCond ? 'yellow' : '');
 
   document.getElementById('c-input').value = '';
   yesAutoActive = false;
   interactionCount++;
   checkSwipeBar();
   renderComments();
-  renderConditions();
 }
 
 // enter key posts + yes-autocomplete
@@ -5490,6 +5766,74 @@ function nextDebate(){
   render();
 }
 
+// ═══ ARGUMENT CARDS (rebuttals + tagged-in responses) ═══
+// Ordered extra cards for the current debate: tagged-in responses first (newest = "top card"),
+// then the rebuttal thread. cardIdx 0 = main debate; 1..N = these cards.
+function getCards(){
+  const d = debates()[idx % debates().length];
+  const rebs = getDebateRebuttals(d.topic);
+  const cards = [];
+  const t = getTag();
+  ['A','B'].forEach(s => {
+    if(t[s] && !isRage){
+      cards.push({ kind:'tagged', side:s, title:'TAGGED-IN RESPONSE', body:t[s].preview, by:t[s].user + ' · SIDE ' + s });
+    }
+  });
+  rebs.forEach(r => { if(r) cards.push({ kind:'rebuttal', side:r.side, title:r.topic, body:r.arg, by:'SIDE ' + r.side + ' · REBUTTAL' }); });
+  return cards;
+}
+
+function renderCardDots(){
+  const row = document.getElementById('rebuttal-dots');
+  if(!row) return;
+  const cards = getCards();
+  if(cards.length === 0){ row.style.display = 'none'; row.innerHTML = ''; return; }
+  row.style.display = 'flex';
+  let rebNum = 0;
+  row.innerHTML = cards.map((c, i) => {
+    const n = i + 1;
+    let label;
+    if(c.kind === 'tagged'){ label = '🤝'; } else { rebNum++; label = rebNum; }
+    const cls = 'rebuttal-dot ' + (c.side === 'A' ? 'active-a' : 'active-b') +
+      (c.kind === 'tagged' ? ' dot-tagged' : '') + (cardIdx === n ? ' current' : '');
+    return '<button class="' + cls + '" title="' + c.by + '" onclick="showCard(' + n + ')">' + label + '</button>';
+  }).join('');
+}
+
+function showCard(n){
+  const cards = getCards();
+  if(n < 1 || n > cards.length){ showMainDebate(); return; }
+  cardIdx = n;
+  const c = cards[n - 1];
+  const sideClass = c.side === 'A' ? 'cardbox-a' : 'cardbox-b';
+  const tagMark = c.kind === 'tagged' ? '🤝 ' : '';
+  const lastCard = (n >= cards.length);
+  document.getElementById('main-card').classList.add('card-mode');
+  document.getElementById('card-panel').innerHTML =
+    '<div class="card-box ' + sideClass + '">' +
+      '<div class="card-box-label">' + tagMark + c.by + '</div>' +
+      '<div class="card-box-title">' + c.title + '</div>' +
+      '<div class="card-box-body">' + c.body + '</div>' +
+    '</div>' +
+    '<div class="card-nav">' +
+      '<button class="card-nav-btn" onclick="showMainDebate()">← DEBATE</button>' +
+      '<button class="card-nav-btn next" onclick="nextCard()">' + (lastCard ? 'BACK TO DEBATE →' : 'NEXT →') + '</button>' +
+    '</div>';
+  renderCardDots();   // refresh which dot is "current"
+}
+
+function nextCard(){
+  const cards = getCards();
+  if(cardIdx >= cards.length){ showMainDebate(); return; }   // past the last card → back to the main debate
+  showCard(cardIdx + 1);
+}
+
+function showMainDebate(){
+  cardIdx = 0;
+  document.getElementById('main-card').classList.remove('card-mode');
+  render();   // cleanly restores the two sides (no DOM wipe)
+}
+
 function nextRebuttal(){
   const counts = getRebuttalCounts();
   const totalRebuttals = counts.sideA + counts.sideB;
@@ -5690,7 +6034,7 @@ function te(e){
   ['sl-l','sl-r','sl-u','sl-d'].forEach(id=>document.getElementById(id).style.opacity=0);
   if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>50) castVote(dx<0?'A':'B');
   else if(dy<-60) nextDebate();
-  else if(dy>60) nextRebuttal();
+  // swipe-down rebuttal removed — tap the dots to open argument cards
 }
 
 // ═══ SWIPE MOUSE ═══
@@ -5715,7 +6059,7 @@ function me(e){
   ['sl-l','sl-r','sl-u','sl-d'].forEach(id=>document.getElementById(id).style.opacity=0);
   if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>50) castVote(dx<0?'A':'B');
   else if(dy<-60) nextDebate();
-  else if(dy>60) nextRebuttal();
+  // swipe-down rebuttal removed — tap the dots to open argument cards
 }
 function ml(e){ if(dragging){ dragging=false; me(e); } }
 
