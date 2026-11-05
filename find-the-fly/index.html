@@ -3,35 +3,39 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Find the Fly</title>
-<meta name="description" content="A Where's-Waldo hunt through real living spaces — think like a fly, track the buzz, catch it before it multiplies." />
+<title>KILL THE FLY</title>
+<meta name="description" content="Find the filthy thing. Line up. Smack it before it lifts off again." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="app">
+    <div class="speck-layer" aria-hidden="true"></div>
+    <div class="itch-vignette" aria-hidden="true"></div>
+
     <!-- TITLE -->
     <section id="screen-title" class="screen active" aria-label="Title">
       <div class="atmosphere" aria-hidden="true"></div>
       <div class="title-stage">
-        <p class="brand">Find the Fly</p>
-        <h1 class="tagline">One buzz. One room. Zero mercy.</h1>
-        <p class="lede">Scan real living messes. Think where a fly would land — light, food, warmth — then pin it before the swarm.</p>
+        <p class="brand">KILL<br>THE FLY</p>
+        <h1 class="tagline">It’s been on the fruit. On the trash. On your lip while you slept.</h1>
+        <p class="lede">Hunt it through the filth. Spot it. Then you get a few ugly seconds to line up the swatter and end it — before it lifts and breeds.</p>
         <div class="cta-row">
-          <button type="button" class="btn primary" data-go="difficulty">Play</button>
-          <button type="button" class="btn ghost" data-go="howto">How it works</button>
+          <button type="button" class="btn primary throb" data-go="difficulty">I hate it already</button>
+          <button type="button" class="btn ghost" data-go="howto">How this works</button>
         </div>
       </div>
       <div class="title-fly" aria-hidden="true">
         <svg viewBox="0 0 80 60" class="hero-fly">
           <ellipse class="wing wing-l" cx="22" cy="28" rx="18" ry="10" />
           <ellipse class="wing wing-r" cx="58" cy="28" rx="18" ry="10" />
-          <ellipse cx="40" cy="32" rx="12" ry="9" fill="#1a1612" />
-          <circle cx="48" cy="28" r="3.2" fill="#2a241c" />
-          <circle cx="49.2" cy="27.2" r="1" fill="#c8f06a" />
+          <ellipse cx="40" cy="32" rx="12" ry="9" fill="#1a1208" />
+          <circle cx="48" cy="28" r="3.2" fill="#2e2210" />
+          <circle cx="49.2" cy="27.2" r="1" fill="#e8ff3d" />
         </svg>
+        <span class="crawl-text">bzz bzz bzz bzz bzz</span>
       </div>
     </section>
 
@@ -39,15 +43,16 @@
     <section id="screen-howto" class="screen" aria-label="How it works">
       <button type="button" class="back" data-go="title">← Back</button>
       <div class="panel">
-        <h2>How it works</h2>
+        <h2>How you end it</h2>
         <ol class="rules">
-          <li><strong>Scan the room.</strong> Every scene is a lived-in space with crumbs, lamps, vents, and trash.</li>
-          <li><strong>Think like a fly.</strong> Warm rooms pull toward light. Cold rooms pull toward heat and food. Filthy counters beat clean windowsills.</li>
-          <li><strong>Use the glass.</strong> Hold the magnifier to peer closer — flies hide in the clutter.</li>
-          <li><strong>Tap Get a hint</strong> and the fly lifts off. Track the flight path, then find where it settles.</li>
-          <li><strong>Don’t dawdle.</strong> Take too long and it replicates. Swarm = timeout.</li>
+          <li><strong>Scan the rot.</strong> Sticky counters, open jam, lamp heat, trash breath — that’s where it sits.</li>
+          <li><strong>Think like vermin.</strong> Cold rooms → radiators &amp; food. Warm rooms → light &amp; sugar.</li>
+          <li><strong>Use the glass.</strong> Magnify the grease. It’s smaller than your dignity.</li>
+          <li><strong>Hint = track the flight.</strong> It lifts. You watch. You remember where it lands.</li>
+          <li><strong>Spot it, then SMACK.</strong> Finding it only starts the clock. Line up the swatter and crush it before the seconds die.</li>
+          <li><strong>Hesitate and it breeds.</strong> Replicas. Swarm. You lose the room.</li>
         </ol>
-        <button type="button" class="btn primary" data-go="difficulty">Pick difficulty</button>
+        <button type="button" class="btn primary" data-go="difficulty">Pick your poison</button>
       </div>
     </section>
 
@@ -55,23 +60,23 @@
     <section id="screen-difficulty" class="screen" aria-label="Difficulty">
       <button type="button" class="back" data-go="title">← Back</button>
       <div class="panel">
-        <h2>How tough?</h2>
-        <p class="lede tight">Difficulty changes the fly’s size and speed, how cold the room runs, and how fast the swarm starts.</p>
+        <h2>How bad is it?</h2>
+        <p class="lede tight">Harder = tinier fly, faster skitter, colder room, shorter smack window, earlier swarm.</p>
         <div class="diff-grid" role="list">
           <button type="button" class="diff-card" data-diff="easy" role="listitem">
-            <span class="diff-name">Housefly</span>
-            <span class="diff-meta">Big · slow · warm kitchen</span>
-            <span class="diff-blurb">Fat target. Plenty of time. Heat keeps it near the counter light.</span>
+            <span class="diff-name">Fat housefly</span>
+            <span class="diff-meta">Big · sluggish · 5s smack</span>
+            <span class="diff-blurb">Easy to hate. Easy to hit. Still disgusting.</span>
           </button>
           <button type="button" class="diff-card" data-diff="normal" role="listitem">
-            <span class="diff-name">Busy bee</span>
-            <span class="diff-meta">Medium · quick · drafty room</span>
-            <span class="diff-blurb">Chilly air. It hunts lamps and leftover plates.</span>
+            <span class="diff-name">Kitchen menace</span>
+            <span class="diff-meta">Medium · twitchy · 3.5s smack</span>
+            <span class="diff-blurb">Drafty room. It won’t sit still for long.</span>
           </button>
           <button type="button" class="diff-card" data-diff="hard" role="listitem">
-            <span class="diff-name">Fruit flea</span>
-            <span class="diff-meta">Tiny · frantic · cold flat</span>
-            <span class="diff-blurb">Needle-sized. Blinks between food and radiators. Swarm timer bites early.</span>
+            <span class="diff-name">Fruit flea hell</span>
+            <span class="diff-meta">Needle · frantic · 2.2s smack</span>
+            <span class="diff-blurb">Almost invisible. Smack window is a blink.</span>
           </button>
         </div>
       </div>
@@ -81,21 +86,41 @@
     <section id="screen-play" class="screen" aria-label="Game">
       <header class="hud">
         <div class="hud-left">
-          <span class="hud-brand">Find the Fly</span>
+          <span class="hud-brand">KILL THE FLY</span>
           <span id="scene-label" class="hud-scene">Kitchen</span>
         </div>
         <div class="hud-stats">
           <span id="temp-chip" class="chip" title="Room temperature">72°F</span>
           <span id="timer-chip" class="chip warn" title="Time until swarm">0:45</span>
-          <span id="score-chip" class="chip">0 found</span>
+          <span id="score-chip" class="chip">0 dead</span>
         </div>
       </header>
+
+      <div id="smack-banner" class="smack-banner" hidden>
+        <span id="smack-label">SPOTTED — LINE UP &amp; SMACK</span>
+        <div class="smack-bar-track" aria-hidden="true">
+          <div id="smack-bar" class="smack-bar"></div>
+        </div>
+        <span id="smack-secs" class="smack-secs">3.5s</span>
+      </div>
 
       <div id="stage-wrap">
         <div id="stage">
           <div id="scene-root" aria-hidden="false"></div>
           <div id="flies-layer"></div>
           <div id="fx-layer" aria-hidden="true"></div>
+          <div id="swatter" hidden aria-hidden="true">
+            <svg viewBox="0 0 64 160" class="swatter-svg">
+              <rect x="28" y="70" width="8" height="90" rx="3" fill="#3a2a18"/>
+              <rect x="8" y="4" width="48" height="72" rx="10" fill="#2a2218" stroke="#6a5a40" stroke-width="3"/>
+              <g stroke="#5a4a30" stroke-width="2" fill="none" opacity="0.7">
+                <line x1="18" y1="16" x2="18" y2="64"/><line x1="28" y1="16" x2="28" y2="64"/>
+                <line x1="38" y1="16" x2="38" y2="64"/><line x1="48" y1="16" x2="48" y2="64"/>
+                <line x1="12" y1="28" x2="52" y2="28"/><line x1="12" y1="42" x2="52" y2="42"/>
+                <line x1="12" y1="56" x2="52" y2="56"/>
+              </g>
+            </svg>
+          </div>
           <div id="magnifier" hidden>
             <div id="mag-lens"></div>
             <div id="mag-rim"></div>
@@ -109,9 +134,9 @@
           <span class="tool-ico" aria-hidden="true">⌕</span> Magnifier
         </button>
         <button type="button" id="btn-hint" class="btn tool">
-          <span class="tool-ico" aria-hidden="true">↻</span> Get a hint
+          <span class="tool-ico" aria-hidden="true">↻</span> Force it to fly
         </button>
-        <button type="button" id="btn-skip" class="btn ghost slim">Skip room</button>
+        <button type="button" id="btn-skip" class="btn ghost slim">Flee room</button>
       </footer>
 
       <p id="think-hint" class="think-hint" aria-live="polite"></p>
@@ -120,7 +145,7 @@
     <!-- RESULT OVERLAY -->
     <div id="overlay" class="overlay" hidden>
       <div class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
-        <h2 id="overlay-title">Caught it</h2>
+        <h2 id="overlay-title">Splat</h2>
         <p id="overlay-body"></p>
         <div class="cta-row">
           <button type="button" id="btn-next" class="btn primary">Next room</button>

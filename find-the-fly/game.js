@@ -3,7 +3,7 @@
 
   const DIFFICULTY = {
     easy: {
-      label: "Housefly",
+      label: "Fat housefly",
       size: 28,
       speed: 0.55,
       tempF: 78,
@@ -12,9 +12,12 @@
       maxReplicas: 4,
       hintDuration: 3200,
       hitPadding: 14,
+      smackSeconds: 5.0,
+      skitter: 0.2,
+      smackHitBoost: 2.4,
     },
     normal: {
-      label: "Busy bee",
+      label: "Kitchen menace",
       size: 16,
       speed: 1.05,
       tempF: 64,
@@ -23,9 +26,12 @@
       maxReplicas: 7,
       hintDuration: 2600,
       hitPadding: 10,
+      smackSeconds: 3.5,
+      skitter: 0.45,
+      smackHitBoost: 2.0,
     },
     hard: {
-      label: "Fruit flea",
+      label: "Fruit flea hell",
       size: 9,
       speed: 1.65,
       tempF: 52,
@@ -34,16 +40,18 @@
       maxReplicas: 12,
       hintDuration: 2000,
       hitPadding: 8,
+      smackSeconds: 2.2,
+      skitter: 0.85,
+      smackHitBoost: 1.7,
     },
   };
 
-  /** Attractors weight how a fly chooses a perch */
   const SCENES = [
     {
       id: "kitchen",
-      name: "Sunday kitchen",
-      think: "Warm crumbs beat a cold windowsill. Check the fruit bowl and the sticky counter under the lamp.",
-      coldThink: "Cold kitchen — it will hug the toaster glow and anything sweet left out.",
+      name: "Sunday kitchen (ruined)",
+      think: "It’s on the sticky sugar. Or the trash breath. Or the warm stove lip.",
+      coldThink: "Cold kitchen — it’ll glue itself to toaster heat and anything sweet left out.",
       attractors: [
         { id: "fruit", x: 0.62, y: 0.58, food: 0.95, light: 0.35, heat: 0.25, label: "fruit bowl" },
         { id: "lamp", x: 0.78, y: 0.28, food: 0.05, light: 0.95, heat: 0.55, label: "pendant lamp" },
@@ -56,9 +64,9 @@
     },
     {
       id: "living",
-      name: "Messy living room",
-      think: "Lamp pools and snack plates are magnets. Sofa crumbs are a classic.",
-      coldThink: "Drafty room — expect radiator heat or the TV glow before bare walls.",
+      name: "Living room crust",
+      think: "Lamp pools. Snack plate. Sofa crease crumbs. Pick your poison.",
+      coldThink: "Drafty — radiator heat or TV glow before bare walls.",
       attractors: [
         { id: "lamp", x: 0.16, y: 0.42, food: 0.05, light: 0.95, heat: 0.7, label: "floor lamp" },
         { id: "plate", x: 0.55, y: 0.62, food: 0.9, light: 0.35, heat: 0.25, label: "snack plate" },
@@ -71,9 +79,9 @@
     },
     {
       id: "bedroom",
-      name: "Bedroom at dusk",
-      think: "Bedside lamp and the water glass. Flies love damp rims.",
-      coldThink: "Cold flat — laptop exhaust and under-blanket warmth win over open windows.",
+      name: "Bedroom at dusk (don’t think about it)",
+      think: "Bedside lamp. Water glass rim. It was near your mouth.",
+      coldThink: "Cold flat — laptop exhaust and blanket warmth win.",
       attractors: [
         { id: "bedlamp", x: 0.2, y: 0.48, food: 0.05, light: 0.95, heat: 0.55, label: "bedside lamp" },
         { id: "glass", x: 0.28, y: 0.58, food: 0.35, light: 0.4, heat: 0.2, label: "water glass" },
@@ -86,9 +94,9 @@
     },
     {
       id: "patio",
-      name: "Back-porch brunch",
-      think: "Open jam jar and the citrus wedge. Shade vs sun — flies often sit the rim.",
-      coldThink: "Chilly porch — grill residual heat and warm drinks beat the railing.",
+      name: "Back-porch brunch (contaminated)",
+      think: "Open jam. Citrus wedge. The rim is a runway.",
+      coldThink: "Chilly porch — grill heat and warm mug before the railing.",
       attractors: [
         { id: "jam", x: 0.48, y: 0.55, food: 1, light: 0.45, heat: 0.3, label: "jam jar" },
         { id: "citrus", x: 0.58, y: 0.58, food: 0.85, light: 0.5, heat: 0.25, label: "citrus" },
@@ -110,8 +118,12 @@
     primaryId: null,
     swarmDeadline: 0,
     replicaAt: 0,
+    swarmFrozenLeft: null, // ms remaining while smack freezes the swarm clock
     hinting: false,
     magnifierOn: false,
+    phase: "hunt", // hunt | smack
+    smackDeadline: 0,
+    smackTargetId: null,
     paused: false,
     raf: 0,
     lastTs: 0,
@@ -149,6 +161,7 @@
 
   $("#btn-menu").addEventListener("click", () => {
     stopLoop();
+    endSmackUI();
     hideOverlay();
     state.magnifierOn = false;
     syncGlassBtn();
@@ -170,8 +183,13 @@
   const magLens = $("#mag-lens");
   const thinkHint = $("#think-hint");
   const overlay = $("#overlay");
+  const swatter = $("#swatter");
+  const smackBanner = $("#smack-banner");
+  const smackBar = $("#smack-bar");
+  const smackSecs = $("#smack-secs");
 
   btnGlass.addEventListener("click", () => {
+    if (state.phase === "smack") return;
     state.magnifierOn = !state.magnifierOn;
     syncGlassBtn();
     if (!state.magnifierOn) {
@@ -184,7 +202,7 @@
   });
 
   btnHint.addEventListener("click", () => {
-    if (state.paused || state.hinting) return;
+    if (state.paused || state.hinting || state.phase === "smack") return;
     triggerHint();
   });
 
@@ -205,7 +223,6 @@
     return cfg().tempF < 68;
   }
 
-  /** Score attractors for current climate */
   function weightAttractor(a) {
     const cold = isCold();
     const foodW = 1.1;
@@ -219,7 +236,6 @@
     const scored = attrs
       .map((a) => ({ a, w: weightAttractor(a) }))
       .sort((x, y) => y.w - x.w);
-    // Soft-max-ish: bias top choices but allow variety
     const top = scored.slice(0, Math.min(3, scored.length));
     const pick = top[Math.floor(Math.random() * top.length)].a;
     const jitter = 0.035;
@@ -238,11 +254,11 @@
   function flySVGMarkup(size) {
     const s = size;
     return `<svg viewBox="0 0 40 30" width="${s}" height="${s * 0.75}" aria-hidden="true">
-      <ellipse class="w" cx="10" cy="14" rx="9" ry="5" fill="rgba(220,230,210,0.45)"/>
-      <ellipse class="w" cx="30" cy="14" rx="9" ry="5" fill="rgba(220,230,210,0.45)"/>
-      <ellipse cx="20" cy="16" rx="7" ry="5" fill="#1a1612"/>
-      <circle cx="25" cy="13.5" r="2.2" fill="#2a241c"/>
-      <circle cx="25.7" cy="13" r="0.7" fill="#c8f06a"/>
+      <ellipse class="w" cx="10" cy="14" rx="9" ry="5" fill="rgba(220,200,150,0.4)"/>
+      <ellipse class="w" cx="30" cy="14" rx="9" ry="5" fill="rgba(220,200,150,0.4)"/>
+      <ellipse cx="20" cy="16" rx="7" ry="5" fill="#1a1208"/>
+      <circle cx="25" cy="13.5" r="2.2" fill="#2e2210"/>
+      <circle cx="25.7" cy="13" r="0.7" fill="#e8ff3d"/>
     </svg>`;
   }
 
@@ -252,7 +268,7 @@
     el.type = "button";
     el.className = "fly-target" + (isPrimary ? "" : " replica");
     el.dataset.id = id;
-    el.setAttribute("aria-label", isPrimary ? "Possible fly" : "Replica fly");
+    el.setAttribute("aria-label", isPrimary ? "Suspect fly" : "Replica fly");
     const size = cfg().size * (isPrimary ? 1 : 0.9);
     el.style.width = size + "px";
     el.style.height = size * 0.75 + "px";
@@ -276,6 +292,7 @@
       path: null,
       pathT: 0,
       pathSpeed: 0,
+      skitterPhase: Math.random() * Math.PI * 2,
     };
     placeFly(fly);
     return fly;
@@ -288,12 +305,16 @@
 
   function startRound() {
     stopLoop();
+    endSmackUI();
     hideOverlay();
     state.paused = false;
     state.hinting = false;
+    state.phase = "hunt";
+    state.smackTargetId = null;
     state.flies = [];
     state.primaryId = null;
     fliesLayer.innerHTML = "";
+    $("#fx-layer").innerHTML = "";
     sceneRoot.innerHTML = scene().svg();
 
     const perch = pickPerch();
@@ -308,10 +329,11 @@
 
     $("#scene-label").textContent = scene().name;
     $("#temp-chip").textContent = cfg().tempF + "°F · " + cfg().label;
-    $("#score-chip").textContent = state.score + " found";
+    $("#score-chip").textContent = state.score + " dead";
     showThink(isCold() ? scene().coldThink : scene().think);
 
     btnHint.disabled = false;
+    btnGlass.disabled = false;
     startLoop();
     updateMagnifier();
   }
@@ -325,36 +347,166 @@
 
   function onFlyClick(id) {
     if (state.paused || state.hinting) return;
+    // During smack, clicking the spotted fly (or near it) counts as a swat.
+    // Fly buttons stopPropagation, so stage never sees those clicks.
+    if (state.phase === "smack") {
+      if (id === state.smackTargetId) attemptSmack(true);
+      else attemptSmack(false);
+      return;
+    }
     const fly = state.flies.find((f) => f.id === id);
     if (!fly) return;
     if (fly.isPrimary) {
-      winRound(fly);
+      beginSmack(fly);
     } else {
-      // Decoy buzz
       fly.el.animate(
-        [{ transform: "translate(-50%,-50%) scale(1)" }, { transform: "translate(-50%,-50%) scale(1.35)" }, { transform: "translate(-50%,-50%) scale(1)" }],
+        [
+          { transform: "translate(-50%,-50%) scale(1)" },
+          { transform: "translate(-50%,-50%) scale(1.35)" },
+          { transform: "translate(-50%,-50%) scale(1)" },
+        ],
         { duration: 220 }
       );
-      showThink("Decoy. The original is still hiding — follow the heat and the crumbs.");
+      showThink("Wrong one. That’s a replica. The original is still mocking you.");
     }
   }
 
-  function winRound(fly) {
+  function beginSmack(fly) {
+    state.phase = "smack";
+    state.smackTargetId = fly.id;
+    const now = performance.now();
+    state.smackDeadline = now + cfg().smackSeconds * 1000;
+    state.swarmFrozenLeft = Math.max(0, state.swarmDeadline - now);
+    state.magnifierOn = false;
+    syncGlassBtn();
+    magnifier.hidden = true;
+    stage.classList.remove("magnifying");
+    stage.classList.add("smacking");
+    fly.el.classList.add("spotted");
+    btnHint.disabled = true;
+    btnGlass.disabled = true;
+
+    smackBanner.hidden = false;
+    swatter.hidden = false;
+    updateSwatter();
+    updateSmackUI(performance.now());
+    showThink("SPOTTED. Line up the swatter. Crush it. Now.");
+  }
+
+  function endSmackUI() {
+    if (state.swarmFrozenLeft != null) {
+      state.swarmDeadline = performance.now() + state.swarmFrozenLeft;
+      state.swarmFrozenLeft = null;
+    }
+    state.phase = "hunt";
+    state.smackTargetId = null;
+    smackBanner.hidden = true;
+    swatter.hidden = true;
+    swatter.classList.remove("swing");
+    stage.classList.remove("smacking");
+    state.flies.forEach((f) => f.el.classList.remove("spotted"));
+    btnHint.disabled = false;
+    btnGlass.disabled = false;
+  }
+
+  function updateSmackUI(ts) {
+    const left = Math.max(0, state.smackDeadline - ts);
+    const total = cfg().smackSeconds * 1000;
+    const pct = (left / total) * 100;
+    smackBar.style.width = pct + "%";
+    smackSecs.textContent = (left / 1000).toFixed(1) + "s";
+    if (left < 1000) smackBanner.style.background = "linear-gradient(90deg,#7a0808,#4a0808 40%,#7a0808)";
+  }
+
+  function attemptSmack(forceHit) {
+    if (state.phase !== "smack" || state.paused) return;
+    const fly = state.flies.find((f) => f.id === state.smackTargetId);
+    if (!fly) return;
+
+    swatter.classList.remove("swing");
+    void swatter.offsetWidth;
+    swatter.classList.add("swing");
+
+    let hit = !!forceHit;
+    if (!hit) {
+      const rect = stage.getBoundingClientRect();
+      const pad =
+        ((cfg().size / rect.width) * 1.1 + cfg().hitPadding / rect.width) * cfg().smackHitBoost;
+      const dx = fly.x - state.pointer.x;
+      const dy = fly.y - state.pointer.y;
+      hit = Math.hypot(dx, dy) < pad;
+    }
+
+    if (hit) {
+      splatKill(fly);
+    } else {
+      showThink("MISS. Still buzzing. Line it up.");
+      fly.x = clamp(fly.x + (Math.random() - 0.5) * 0.04, 0.06, 0.94);
+      fly.y = clamp(fly.y + (Math.random() - 0.5) * 0.04, 0.08, 0.9);
+      placeFly(fly);
+    }
+  }
+
+  function splatKill(fly) {
     state.paused = true;
     stopLoop();
     state.score += 1;
-    $("#score-chip").textContent = state.score + " found";
-    flashCatch(fly);
+    $("#score-chip").textContent = state.score + " dead";
+
+    const mark = document.createElement("div");
+    mark.className = "splat-mark";
+    mark.textContent = "SPLAT";
+    mark.style.left = fly.x * 100 + "%";
+    mark.style.top = fly.y * 100 + "%";
+    mark.style.transform = "translate(-50%,-50%) rotate(" + (Math.random() * 20 - 10) + "deg)";
+    $("#fx-layer").appendChild(mark);
+
+    // gore blot
+    const blot = document.createElement("div");
+    blot.style.cssText = `position:absolute;left:${fly.x * 100}%;top:${fly.y * 100}%;width:28px;height:22px;margin:-11px -14px;border-radius:40% 60% 55% 45%;background:radial-gradient(circle at 40% 40%,#a84838,#5a1810 70%);opacity:0.9;pointer-events:none;z-index:7`;
+    $("#fx-layer").appendChild(blot);
+
+    fly.el.style.visibility = "hidden";
+    endSmackUI();
+
     showOverlay(
-      "Caught it",
-      `Pinned on the ${fly.label}. ${cfg().label} down — ${state.score} room${state.score === 1 ? "" : "s"} cleared.`,
+      "Splat",
+      `Crushed on the ${fly.label}. ${cfg().label} paste. ${state.score} room${state.score === 1 ? "" : "s"} cleaned.`,
       false
     );
+  }
+
+  function smackEscaped() {
+    const fly = state.flies.find((f) => f.id === state.smackTargetId);
+    endSmackUI();
+    if (!fly) return;
+
+    // flee to new perch — you spotted it but choked
+    const next = pickPerch([fly.attractorId]);
+    fly.el.classList.remove("spotted");
+    fly.flying = true;
+    fly.path = [
+      { x: fly.x, y: fly.y },
+      { x: clamp((fly.x + next.x) / 2 + 0.1, 0.08, 0.92), y: clamp(fly.y - 0.12, 0.08, 0.85) },
+      { x: clamp((fly.x + next.x) / 2 - 0.08, 0.08, 0.92), y: clamp(next.y - 0.05, 0.08, 0.85) },
+      { x: next.x, y: next.y },
+    ];
+    fly.pathT = 0;
+    fly.pathSpeed = 0.9 * cfg().speed;
+    fly.tx = next.x;
+    fly.ty = next.y;
+    fly.attractorId = next.attractorId;
+    fly.label = next.label;
+
+    // punish: shave swarm time
+    state.swarmDeadline -= 8000;
+    showThink("It got away. You hesitated. Now it’s somewhere worse.");
   }
 
   function loseRound(reason) {
     state.paused = true;
     stopLoop();
+    endSmackUI();
     showOverlay("Swarm", reason, true);
   }
 
@@ -378,16 +530,6 @@
     overlay.hidden = true;
   }
 
-  function flashCatch(fly) {
-    const ring = document.createElement("div");
-    ring.style.cssText = `position:absolute;left:${fly.x * 100}%;top:${fly.y * 100}%;width:40px;height:40px;margin:-20px;border:2px solid #c8f06a;border-radius:50%;pointer-events:none;z-index:5`;
-    $("#fx-layer").appendChild(ring);
-    ring.animate(
-      [{ transform: "scale(0.4)", opacity: 1 }, { transform: "scale(2.2)", opacity: 0 }],
-      { duration: 500, easing: "ease-out" }
-    ).onfinish = () => ring.remove();
-  }
-
   function triggerHint() {
     const primary = state.flies.find((f) => f.isPrimary);
     if (!primary) return;
@@ -405,7 +547,7 @@
     };
 
     primary.flying = true;
-    primary.path = [ { x: primary.x, y: primary.y }, mid1, mid2, { x: next.x, y: next.y } ];
+    primary.path = [{ x: primary.x, y: primary.y }, mid1, mid2, { x: next.x, y: next.y }];
     primary.pathT = 0;
     primary.pathSpeed = (0.35 + cfg().speed * 0.35) / (cfg().hintDuration / 1000);
     primary.tx = next.x;
@@ -414,13 +556,11 @@
     primary.label = next.label;
     primary.el.classList.add("hinting");
     primary.el.style.zIndex = "6";
-
-    // Wing flap amp while hinting
     primary.el.querySelectorAll(".w").forEach((w) => {
       w.style.animation = "flap-l 0.08s ease-in-out infinite alternate";
     });
 
-    showThink("Track it — then guess the landing. Light, food, or warmth?");
+    showThink("Track that disgusting path. Remember the landing.");
 
     const trail = setInterval(() => {
       if (!state.hinting) return;
@@ -439,14 +579,14 @@
         w.style.animation = "";
       });
       state.hinting = false;
-      btnHint.disabled = false;
-      showThink(`Settled near the ${primary.label}. Use the glass if you need a closer look.`);
+      if (state.phase !== "smack") btnHint.disabled = false;
+      showThink(`It settled on the ${primary.label}. Find it. Then smash it.`);
     }, cfg().hintDuration);
   }
 
   function spawnTrail(x, y) {
     const d = document.createElement("div");
-    d.style.cssText = `position:absolute;left:${x * 100}%;top:${y * 100}%;width:4px;height:4px;margin:-2px;border-radius:50%;background:rgba(200,240,106,0.55);pointer-events:none`;
+    d.style.cssText = `position:absolute;left:${x * 100}%;top:${y * 100}%;width:4px;height:4px;margin:-2px;border-radius:50%;background:rgba(214,222,42,0.55);pointer-events:none`;
     $("#fx-layer").appendChild(d);
     d.animate([{ opacity: 0.7, transform: "scale(1)" }, { opacity: 0, transform: "scale(0.2)" }], {
       duration: 420,
@@ -454,26 +594,18 @@
   }
 
   function bezier(pts, t) {
-    // De Casteljau for 4 points
     const [p0, p1, p2, p3] = pts;
     const u = 1 - t;
     const x =
-      u * u * u * p0.x +
-      3 * u * u * t * p1.x +
-      3 * u * t * t * p2.x +
-      t * t * t * p3.x;
+      u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
     const y =
-      u * u * u * p0.y +
-      3 * u * u * t * p1.y +
-      3 * u * t * t * p2.y +
-      t * t * t * p3.y;
+      u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
     return { x, y };
   }
 
   function replicate() {
     const used = state.flies.map((f) => f.attractorId);
     const perch = pickPerch(used.length >= scene().attractors.length ? [] : used);
-    // Spawn near primary then drift
     const primary = state.flies.find((f) => f.isPrimary);
     const spawn = {
       ...perch,
@@ -495,7 +627,7 @@
     replica.attractorId = perch.attractorId;
     replica.label = perch.label;
     state.flies.push(replica);
-    showThink("It split. Find the original before the room fills up.");
+    showThink("It split. Kill the original before the room fills with wings.");
   }
 
   function startLoop() {
@@ -504,9 +636,15 @@
       if (state.paused) return;
       const dt = Math.min(0.05, (ts - state.lastTs) / 1000 || 0.016);
       state.lastTs = ts;
-      updateFlies(dt);
+      updateFlies(dt, ts);
       updateTimer(ts);
-      if (state.magnifierOn && state.pointer.over) updateMagnifier();
+      if (state.phase === "smack") {
+        updateSmackUI(ts);
+        updateSwatter();
+        if (ts >= state.smackDeadline) smackEscaped();
+      } else if (state.magnifierOn && state.pointer.over) {
+        updateMagnifier();
+      }
       state.raf = requestAnimationFrame(tick);
     };
     state.raf = requestAnimationFrame(tick);
@@ -516,29 +654,47 @@
     cancelAnimationFrame(state.raf);
   }
 
-  function updateFlies(dt) {
+  function updateFlies(dt, ts) {
     for (const fly of state.flies) {
-      if (!fly.flying || !fly.path) continue;
-      fly.pathT += fly.pathSpeed * dt;
-      const t = Math.min(1, fly.pathT);
-      const p = bezier(fly.path, t);
-      fly.x = p.x;
-      fly.y = p.y;
-      placeFly(fly);
-      // Micro buzz
-      fly.el.style.transform = `translate(-50%, -50%) translate(${Math.sin(performance.now() / 40) * 1.2}px, ${Math.cos(performance.now() / 33) * 1.2}px)`;
-      if (t >= 1) {
-        fly.flying = false;
-        fly.x = fly.tx;
-        fly.y = fly.ty;
-        fly.el.style.transform = "translate(-50%, -50%)";
+      if (fly.flying && fly.path) {
+        fly.pathT += fly.pathSpeed * dt;
+        const t = Math.min(1, fly.pathT);
+        const p = bezier(fly.path, t);
+        fly.x = p.x;
+        fly.y = p.y;
         placeFly(fly);
+        fly.el.style.transform = `translate(-50%, -50%) translate(${Math.sin(ts / 40) * 1.2}px, ${Math.cos(ts / 33) * 1.2}px)`;
+        if (t >= 1) {
+          fly.flying = false;
+          fly.x = fly.tx;
+          fly.y = fly.ty;
+          fly.el.style.transform = "translate(-50%, -50%)";
+          placeFly(fly);
+        }
+        continue;
+      }
+
+      // During smack: nervous twitch — hard enough to feel alive, soft enough to hit
+      if (state.phase === "smack" && fly.id === state.smackTargetId) {
+        fly.skitterPhase += dt * (3 + cfg().skitter * 4);
+        const amp = 0.002 + cfg().skitter * 0.0035;
+        const jx = Math.sin(fly.skitterPhase * 1.7) * amp;
+        const jy = Math.cos(fly.skitterPhase * 2.1) * amp;
+        fly.el.style.transform = `translate(-50%, -50%) translate(${jx * stage.clientWidth}px, ${jy * stage.clientHeight}px)`;
+        if (Math.random() < dt * cfg().skitter * 0.35) {
+          fly.x = clamp(fly.x + (Math.random() - 0.5) * 0.01 * cfg().skitter, 0.06, 0.94);
+          fly.y = clamp(fly.y + (Math.random() - 0.5) * 0.01 * cfg().skitter, 0.08, 0.9);
+          placeFly(fly);
+        }
       }
     }
   }
 
   function updateTimer(ts) {
-    const left = Math.max(0, state.swarmDeadline - ts);
+    const left =
+      state.phase === "smack" && state.swarmFrozenLeft != null
+        ? state.swarmFrozenLeft
+        : Math.max(0, state.swarmDeadline - ts);
     const sec = Math.ceil(left / 1000);
     const m = Math.floor(sec / 60);
     const s = String(sec % 60).padStart(2, "0");
@@ -546,8 +702,10 @@
     chip.textContent = `${m}:${s}`;
     chip.classList.toggle("danger", sec <= 12);
 
+    if (state.phase === "smack") return;
+
     if (left <= 0) {
-      loseRound("Too slow — the swarm took the room. Next time, think where the fly wants to be.");
+      loseRound("Too slow — the swarm took the room. That buzzing is forever now.");
       return;
     }
 
@@ -558,9 +716,18 @@
     }
   }
 
-  /* ── Magnifier: clone scene+flies into lens, scale around pointer ── */
+  function updateSwatter() {
+    if (state.phase !== "smack" || !state.pointer.over) {
+      if (state.phase === "smack") swatter.style.opacity = "0.35";
+      return;
+    }
+    swatter.style.opacity = "1";
+    swatter.style.left = state.pointer.x * 100 + "%";
+    swatter.style.top = state.pointer.y * 100 + "%";
+  }
+
   function updateMagnifier() {
-    if (!state.magnifierOn) {
+    if (!state.magnifierOn || state.phase === "smack") {
       magnifier.hidden = true;
       return;
     }
@@ -575,10 +742,10 @@
     magnifier.style.left = px * 100 + "%";
     magnifier.style.top = py * 100 + "%";
 
-    const zoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mag-zoom")) || 2.15;
+    const zoom =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mag-zoom")) || 2.15;
     const magSize = magLens.clientWidth || 160;
 
-    // Build / refresh clone
     let inner = magLens.querySelector(".mag-inner");
     if (!inner) {
       magLens.innerHTML = "";
@@ -593,7 +760,6 @@
       inner.appendChild(scaled);
     }
 
-    // Snapshot approach: clone current scene root + flies as HTML
     scaled.innerHTML = "";
     const sceneClone = sceneRoot.cloneNode(true);
     const fliesClone = fliesLayer.cloneNode(true);
@@ -628,85 +794,86 @@
 
   stage.addEventListener("pointermove", (e) => {
     pointerFromEvent(e);
-    if (state.magnifierOn) updateMagnifier();
+    if (state.phase === "smack") updateSwatter();
+    else if (state.magnifierOn) updateMagnifier();
   });
   stage.addEventListener("pointerenter", (e) => {
     pointerFromEvent(e);
-    if (state.magnifierOn) updateMagnifier();
+    if (state.phase === "smack") updateSwatter();
+    else if (state.magnifierOn) updateMagnifier();
   });
   stage.addEventListener("pointerleave", () => {
     state.pointer.over = false;
     if (state.magnifierOn) magnifier.hidden = true;
   });
 
-  // Click through magnifier: hit-test primary by distance in stage space
   stage.addEventListener("click", (e) => {
-    if (!state.magnifierOn || state.paused || state.hinting) return;
+    if (state.paused || state.hinting) return;
+    if (state.phase === "smack") {
+      pointerFromEvent(e);
+      attemptSmack();
+      return;
+    }
+    if (!state.magnifierOn) return;
     const rect = stage.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     const pad = cfg().hitPadding / rect.width;
     const hit = state.flies.find((f) => {
-      const dx = f.x - x;
-      const dy = f.y - y;
       const hitR = (cfg().size / rect.width) * 0.6 + pad;
-      return Math.hypot(dx, dy) < hitR;
+      return Math.hypot(f.x - x, f.y - y) < hitR;
     });
     if (hit) onFlyClick(hit.id);
   });
 
-  /* ── Scene SVGs ── */
+  window.addEventListener("resize", () => {
+    if (state.magnifierOn) updateMagnifier();
+  });
+
+  /* ── Scene SVGs (filthier) ── */
   function kitchenSVG() {
     return `<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="k-wall" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#d8c4a4"/>
-          <stop offset="100%" stop-color="#c4ad88"/>
+          <stop offset="0%" stop-color="#c4a878"/>
+          <stop offset="100%" stop-color="#a89068"/>
         </linearGradient>
         <radialGradient id="k-lamp" cx="78%" cy="18%" r="35%">
-          <stop offset="0%" stop-color="#ffe29a" stop-opacity="0.55"/>
+          <stop offset="0%" stop-color="#ffe29a" stop-opacity="0.5"/>
           <stop offset="100%" stop-color="#ffe29a" stop-opacity="0"/>
         </radialGradient>
       </defs>
       <rect width="800" height="500" fill="url(#k-wall)"/>
-      <rect x="0" y="320" width="800" height="180" fill="#6b5844"/>
-      <rect x="0" y="300" width="800" height="28" fill="#4a3b2e"/>
-      <!-- window -->
-      <rect x="60" y="40" width="160" height="140" rx="4" fill="#8ec4d4"/>
-      <path d="M60 110 H220 M140 40 V180" stroke="#fff8e8" stroke-width="6"/>
-      <rect x="52" y="40" width="176" height="148" fill="none" stroke="#5a4636" stroke-width="8"/>
-      <!-- cabinets -->
-      <rect x="40" y="328" width="200" height="140" fill="#3d4f3a"/>
-      <rect x="250" y="328" width="220" height="140" fill="#455843"/>
-      <rect x="480" y="328" width="280" height="140" fill="#3d4f3a"/>
-      <circle cx="220" cy="400" r="4" fill="#c8b48a"/>
-      <circle cx="450" cy="400" r="4" fill="#c8b48a"/>
-      <!-- stove -->
+      <rect x="0" y="320" width="800" height="180" fill="#5a4838"/>
+      <rect x="0" y="300" width="800" height="28" fill="#3a2e24"/>
+      <ellipse cx="420" cy="318" rx="90" ry="12" fill="#6a5040" opacity="0.45"/>
+      <ellipse cx="520" cy="312" rx="40" ry="8" fill="#4a3828" opacity="0.35"/>
+      <rect x="60" y="40" width="160" height="140" rx="4" fill="#7ab0c0"/>
+      <path d="M60 110 H220 M140 40 V180" stroke="#e8dcc0" stroke-width="6"/>
+      <rect x="52" y="40" width="176" height="148" fill="none" stroke="#4a3828" stroke-width="8"/>
+      <rect x="40" y="328" width="200" height="140" fill="#3a4a32"/>
+      <rect x="250" y="328" width="220" height="140" fill="#42543a"/>
+      <rect x="480" y="328" width="280" height="140" fill="#3a4a32"/>
       <rect x="260" y="250" width="140" height="55" rx="3" fill="#2a2a2a"/>
       <circle cx="295" cy="275" r="16" fill="#1a1a1a" stroke="#444" stroke-width="3"/>
       <circle cx="365" cy="275" r="16" fill="#1a1a1a" stroke="#444" stroke-width="3"/>
-      <rect x="300" y="220" width="60" height="30" fill="#888" opacity="0.35"/>
-      <!-- sink -->
-      <ellipse cx="385" cy="310" rx="50" ry="18" fill="#9aa8b0"/>
-      <rect x="370" y="280" width="10" height="30" fill="#777"/>
-      <!-- fruit bowl -->
+      <ellipse cx="385" cy="310" rx="50" ry="18" fill="#8a9898"/>
       <ellipse cx="500" cy="295" rx="42" ry="14" fill="#5a4030"/>
-      <circle cx="485" cy="278" r="14" fill="#d4553a"/>
-      <circle cx="505" cy="272" r="13" fill="#e8c84a"/>
-      <circle cx="520" cy="282" r="12" fill="#6a9e3a"/>
-      <!-- trash -->
-      <rect x="90" y="360" width="55" height="70" rx="4" fill="#303830"/>
+      <circle cx="485" cy="278" r="14" fill="#c04030"/>
+      <circle cx="505" cy="272" r="13" fill="#d8b040"/>
+      <circle cx="520" cy="282" r="12" fill="#5a8a30"/>
+      <circle cx="498" cy="268" r="3" fill="#2a1810" opacity="0.5"/>
+      <rect x="90" y="360" width="55" height="70" rx="4" fill="#283028"/>
       <ellipse cx="117" cy="360" rx="28" ry="8" fill="#3a453a"/>
-      <!-- pendant -->
       <line x1="624" y1="0" x2="624" y2="70" stroke="#333" stroke-width="3"/>
       <path d="M590 70 H658 L644 110 H604 Z" fill="#2a241c"/>
       <circle cx="624" cy="118" r="10" fill="#ffe29a"/>
       <rect width="800" height="500" fill="url(#k-lamp)"/>
-      <!-- clutter crumbs -->
-      <circle cx="470" cy="312" r="2" fill="#8a6a40"/>
-      <circle cx="540" cy="308" r="1.5" fill="#8a6a40"/>
-      <circle cx="330" cy="318" r="2" fill="#6a5a40"/>
-      <text x="70" y="490" fill="rgba(0,0,0,0.25)" font-size="14" font-family="IBM Plex Sans,sans-serif">crumbs · sticky rings · last night's plates</text>
+      <circle cx="470" cy="312" r="2.5" fill="#5a3a20"/>
+      <circle cx="540" cy="308" r="2" fill="#5a3a20"/>
+      <circle cx="330" cy="318" r="2.5" fill="#4a3020"/>
+      <circle cx="355" cy="305" r="1.5" fill="#3a2818"/>
+      <text x="70" y="490" fill="rgba(0,0,0,0.3)" font-size="13" font-family="IBM Plex Mono,monospace">sticky rings · fruit flies dream here · don’t lick the counter</text>
     </svg>`;
   }
 
@@ -714,44 +881,38 @@
     return `<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="l-lamp" cx="16%" cy="40%" r="40%">
-          <stop offset="0%" stop-color="#ffd27a" stop-opacity="0.5"/>
+          <stop offset="0%" stop-color="#ffd27a" stop-opacity="0.48"/>
           <stop offset="100%" stop-color="#ffd27a" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="l-tv" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#7ec8ff"/>
-          <stop offset="100%" stop-color="#3a6a9a"/>
+          <stop offset="0%" stop-color="#6ab0d8"/>
+          <stop offset="100%" stop-color="#2a4a6a"/>
         </linearGradient>
       </defs>
-      <rect width="800" height="500" fill="#4a5a52"/>
-      <rect x="0" y="360" width="800" height="140" fill="#5c4a38"/>
-      <!-- sofa -->
-      <rect x="180" y="280" width="320" height="110" rx="18" fill="#6b3f3a"/>
-      <rect x="200" y="260" width="120" height="40" rx="10" fill="#7a4a44"/>
-      <rect x="360" y="260" width="120" height="40" rx="10" fill="#7a4a44"/>
-      <!-- plate -->
-      <ellipse cx="440" cy="310" rx="36" ry="12" fill="#e8e0d0"/>
-      <circle cx="430" cy="305" r="8" fill="#c45"/>
-      <rect x="448" y="300" width="18" height="6" rx="2" fill="#e8c84a"/>
-      <!-- floor lamp -->
+      <rect width="800" height="500" fill="#3a4a42"/>
+      <rect x="0" y="360" width="800" height="140" fill="#4a3a2c"/>
+      <rect x="180" y="280" width="320" height="110" rx="18" fill="#5a3834"/>
+      <rect x="200" y="260" width="120" height="40" rx="10" fill="#6a4440"/>
+      <rect x="360" y="260" width="120" height="40" rx="10" fill="#6a4440"/>
+      <ellipse cx="440" cy="310" rx="36" ry="12" fill="#d8d0c0"/>
+      <circle cx="430" cy="305" r="8" fill="#b04030"/>
+      <rect x="448" y="300" width="18" height="6" rx="2" fill="#d0a830"/>
       <line x1="120" y1="200" x2="120" y2="380" stroke="#2a241c" stroke-width="6"/>
-      <path d="M80 200 Q120 140 160 200" fill="#f5e6c0" opacity="0.9"/>
+      <path d="M80 200 Q120 140 160 200" fill="#e8d8b0" opacity="0.9"/>
       <circle cx="120" cy="195" r="8" fill="#ffe29a"/>
-      <!-- TV -->
       <rect x="560" y="120" width="180" height="110" rx="6" fill="#1a1a1a"/>
       <rect x="570" y="130" width="160" height="90" fill="url(#l-tv)"/>
       <rect x="620" y="230" width="60" height="40" fill="#333"/>
-      <!-- radiator -->
-      <rect x="680" y="330" width="90" height="50" rx="4" fill="#8a9090"/>
-      <g stroke="#6a7070" stroke-width="3">
+      <rect x="680" y="330" width="90" height="50" rx="4" fill="#7a8080"/>
+      <g stroke="#5a6060" stroke-width="3">
         <line x1="695" y1="335" x2="695" y2="375"/><line x1="710" y1="335" x2="710" y2="375"/>
         <line x1="725" y1="335" x2="725" y2="375"/><line x1="740" y1="335" x2="740" y2="375"/>
         <line x1="755" y1="335" x2="755" y2="375"/>
       </g>
-      <!-- plant -->
-      <rect x="240" y="300" width="28" height="32" fill="#8a5a3a"/>
-      <ellipse cx="254" cy="285" rx="22" ry="28" fill="#2f6b3a"/>
+      <rect x="240" y="300" width="28" height="32" fill="#7a5a3a"/>
+      <ellipse cx="254" cy="285" rx="22" ry="28" fill="#2a5a32"/>
       <rect width="800" height="500" fill="url(#l-lamp)"/>
-      <text x="40" y="490" fill="rgba(255,255,255,0.2)" font-size="14" font-family="IBM Plex Sans,sans-serif">remote batteries · blanket nest · last slice</text>
+      <text x="40" y="490" fill="rgba(255,255,255,0.18)" font-size="13" font-family="IBM Plex Mono,monospace">blanket nest · last slice · remote batteries</text>
     </svg>`;
   }
 
@@ -759,35 +920,29 @@
     return `<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <radialGradient id="b-lamp" cx="20%" cy="45%" r="35%">
-          <stop offset="0%" stop-color="#ffcc77" stop-opacity="0.55"/>
+          <stop offset="0%" stop-color="#ffcc77" stop-opacity="0.52"/>
           <stop offset="100%" stop-color="#ffcc77" stop-opacity="0"/>
         </radialGradient>
       </defs>
-      <rect width="800" height="500" fill="#3a3550"/>
-      <rect x="0" y="340" width="800" height="160" fill="#2a2438"/>
-      <!-- bed -->
-      <rect x="80" y="250" width="380" height="160" rx="8" fill="#5a6a8a"/>
-      <rect x="100" y="220" width="140" height="50" rx="10" fill="#d8d0c0"/>
-      <rect x="260" y="230" width="140" height="40" rx="10" fill="#d0c8b8"/>
-      <!-- nightstand + lamp -->
-      <rect x="40" y="300" width="70" height="70" fill="#4a3a2a"/>
+      <rect width="800" height="500" fill="#322c40"/>
+      <rect x="0" y="340" width="800" height="160" fill="#221c30"/>
+      <rect x="80" y="250" width="380" height="160" rx="8" fill="#4a5a72"/>
+      <rect x="100" y="220" width="140" height="50" rx="10" fill="#c8c0b0"/>
+      <rect x="260" y="230" width="140" height="40" rx="10" fill="#c0b8a8"/>
+      <rect x="40" y="300" width="70" height="70" fill="#3a2e22"/>
       <rect x="62" y="250" width="10" height="50" fill="#2a241c"/>
-      <circle cx="67" cy="245" r="22" fill="#f5e6c0"/>
+      <circle cx="67" cy="245" r="22" fill="#e8d8b0"/>
       <circle cx="67" cy="245" r="8" fill="#ffe29a"/>
-      <!-- glass -->
-      <rect x="95" y="285" width="16" height="22" rx="2" fill="#a8d4e8" opacity="0.7"/>
-      <!-- laptop -->
+      <rect x="95" y="285" width="16" height="22" rx="2" fill="#98c4d8" opacity="0.7"/>
       <rect x="420" y="270" width="110" height="70" rx="4" fill="#1a1a1a"/>
-      <rect x="428" y="278" width="94" height="54" fill="#6a9ecc"/>
-      <!-- window dusk -->
-      <rect x="580" y="60" width="160" height="180" fill="#c47a5a"/>
-      <path d="M580 150 H740 M660 60 V240" stroke="#3a2a40" stroke-width="8"/>
-      <rect x="572" y="52" width="176" height="196" fill="none" stroke="#2a2030" stroke-width="10"/>
-      <!-- hamper -->
-      <ellipse cx="700" cy="390" rx="45" ry="20" fill="#6a5a4a"/>
-      <path d="M655 390 Q700 300 745 390" fill="#8a7a6a"/>
+      <rect x="428" y="278" width="94" height="54" fill="#5a8ab8"/>
+      <rect x="580" y="60" width="160" height="180" fill="#b06848"/>
+      <path d="M580 150 H740 M660 60 V240" stroke="#2a2030" stroke-width="8"/>
+      <rect x="572" y="52" width="176" height="196" fill="none" stroke="#1a1420" stroke-width="10"/>
+      <ellipse cx="700" cy="390" rx="45" ry="20" fill="#5a4a3a"/>
+      <path d="M655 390 Q700 300 745 390" fill="#7a6a5a"/>
       <rect width="800" height="500" fill="url(#b-lamp)"/>
-      <text x="40" y="490" fill="rgba(255,255,255,0.18)" font-size="14" font-family="IBM Plex Sans,sans-serif">sock under the bed · open book · charging cable</text>
+      <text x="40" y="490" fill="rgba(255,255,255,0.16)" font-size="13" font-family="IBM Plex Mono,monospace">open book · charging cable · don’t ask about the glass</text>
     </svg>`;
   }
 
@@ -795,32 +950,25 @@
     return `<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="p-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#6a9eb8"/>
-          <stop offset="100%" stop-color="#b8d4c0"/>
+          <stop offset="0%" stop-color="#5a8aa0"/>
+          <stop offset="100%" stop-color="#a8c4a8"/>
         </linearGradient>
       </defs>
       <rect width="800" height="500" fill="url(#p-sky)"/>
-      <rect x="0" y="300" width="800" height="200" fill="#7a8a5a"/>
-      <rect x="0" y="300" width="800" height="20" fill="#5a6a45"/>
-      <!-- table -->
-      <ellipse cx="400" cy="340" rx="180" ry="50" fill="#8a6a48"/>
-      <rect x="280" y="340" width="16" height="90" fill="#6a4e34"/>
-      <rect x="504" y="340" width="16" height="90" fill="#6a4e34"/>
-      <!-- jam -->
-      <rect x="360" y="290" width="36" height="40" rx="3" fill="#8B1E1E"/>
-      <rect x="360" y="286" width="36" height="8" fill="#e8dcc8"/>
-      <ellipse cx="378" cy="286" rx="18" ry="5" fill="#f5efe0"/>
-      <!-- citrus -->
-      <circle cx="430" cy="310" r="16" fill="#f0a030"/>
-      <path d="M430 294 L430 326 M414 310 H446" stroke="#e89020" stroke-width="2"/>
-      <!-- mug -->
-      <rect x="310" y="300" width="28" height="32" rx="4" fill="#e8e0d0"/>
-      <path d="M338 308 Q352 316 338 328" fill="none" stroke="#e8e0d0" stroke-width="4"/>
-      <!-- grill -->
+      <rect x="0" y="300" width="800" height="200" fill="#6a7a4a"/>
+      <rect x="0" y="300" width="800" height="20" fill="#4a5a38"/>
+      <ellipse cx="400" cy="340" rx="180" ry="50" fill="#7a5a3a"/>
+      <rect x="280" y="340" width="16" height="90" fill="#5a4028"/>
+      <rect x="504" y="340" width="16" height="90" fill="#5a4028"/>
+      <rect x="360" y="290" width="36" height="40" rx="3" fill="#7a1818"/>
+      <rect x="360" y="286" width="36" height="8" fill="#d8ccb0"/>
+      <ellipse cx="378" cy="286" rx="18" ry="5" fill="#e8e0d0"/>
+      <circle cx="430" cy="310" r="16" fill="#e09028"/>
+      <rect x="310" y="300" width="28" height="32" rx="4" fill="#d8d0c0"/>
+      <path d="M338 308 Q352 316 338 328" fill="none" stroke="#d8d0c0" stroke-width="4"/>
       <rect x="620" y="280" width="100" height="70" rx="6" fill="#2a2a2a"/>
       <rect x="630" y="250" width="80" height="30" fill="#444"/>
       <rect x="655" y="350" width="30" height="50" fill="#333"/>
-      <!-- string lights -->
       <path d="M40 80 Q220 140 400 70 Q580 20 760 100" fill="none" stroke="#3a3a3a" stroke-width="2"/>
       <g fill="#ffe29a">
         <circle cx="100" cy="95" r="6"/><circle cx="200" cy="118" r="6"/>
@@ -828,16 +976,10 @@
         <circle cx="500" cy="55" r="6"/><circle cx="600" cy="62" r="6"/>
         <circle cx="700" cy="88" r="6"/>
       </g>
-      <!-- railing -->
-      <rect x="20" y="200" width="120" height="12" fill="#5a4a3a"/>
-      <rect x="30" y="212" width="8" height="90" fill="#5a4a3a"/>
-      <rect x="120" y="212" width="8" height="90" fill="#5a4a3a"/>
-      <text x="40" y="490" fill="rgba(0,0,0,0.25)" font-size="14" font-family="IBM Plex Sans,sans-serif">sticky spoon · napkin corners · open sugar</text>
+      <rect x="20" y="200" width="120" height="12" fill="#4a3a2a"/>
+      <rect x="30" y="212" width="8" height="90" fill="#4a3a2a"/>
+      <rect x="120" y="212" width="8" height="90" fill="#4a3a2a"/>
+      <text x="40" y="490" fill="rgba(0,0,0,0.28)" font-size="13" font-family="IBM Plex Mono,monospace">sticky spoon · open sugar · jam crime scene</text>
     </svg>`;
   }
-
-  // Resize refreshes magnifier metrics
-  window.addEventListener("resize", () => {
-    if (state.magnifierOn) updateMagnifier();
-  });
 })();

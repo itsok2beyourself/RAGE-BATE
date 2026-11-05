@@ -1,21 +1,19 @@
-# Find the Fly
+# Kill the Fly
 
-A Where’s-Waldo-style hunt through lived-in rooms. Spot the fly before it replicates.
+A repulsive Where’s-Waldo hunt. Spot the vermin, then line up a timed smack before it lifts off and breeds.
 
 ## Play
-
-Open `index.html` in a browser, or from the repo root:
 
 ```bash
 python3 -m http.server 8765 --directory find-the-fly
 ```
 
-Then visit `http://localhost:8765`.
+Visit `http://localhost:8765`.
 
 ## Mechanics
 
-- **Think like a fly** — landing spots bias toward food, light, and heat. Cold rooms pull harder toward radiators, stoves, and laptops.
-- **Magnifier** — toggle the glass and drag to inspect clutter up close.
-- **Get a hint** — the fly lifts off; track the path, then find the new perch.
-- **Difficulty** — Housefly (big/slow/warm), Busy bee (medium/drafty), Fruit flea (tiny/frantic/cold). Harder modes shrink the target, speed up flight, and start the swarm earlier.
-- **Swarm timer** — wait too long and replicas spawn until you time out.
+- **Think like vermin** — landings bias toward food, light, and heat. Cold rooms pull toward radiators / stoves / laptops.
+- **Magnifier** — inspect grease and clutter up close.
+- **Force it to fly** — hint mode; track the path, remember the perch.
+- **Spot → smack** — finding the fly only starts the swatter clock (5s / 3.5s / 2.2s by difficulty). Line up and crush it while it skitters.
+- **Miss or choke** — it flees; swarm timer gets meaner. Wait too long overall and replicas win.
