@@ -50,7 +50,8 @@
           <li><strong>Use the glass.</strong> Magnify the grease. It’s smaller than your dignity.</li>
           <li><strong>Hint = track the flight.</strong> It lifts. You watch. You remember where it lands.</li>
           <li><strong>Shame lock.</strong> Spot it and you zoom to first-person — hand raised, heartbeat in your ears. It only sits for a random 2–5 seconds.</li>
-          <li><strong>Stay stone-still.</strong> The longer you freeze, the calmer your nerves, the cleaner the smack. Twitch and the fly feels it.</li>
+          <li><strong>Stay stone-still.</strong> Freeze to calm nerves and widen the sweet spot. Twitch and the needle races.</li>
+          <li><strong>Madden meter.</strong> Stop the needle in the green. Wait too long and it tightens — heartbeat gets flushed by louder fly buzz.</li>
           <li><strong>Hesitate and it breeds.</strong> Replicas. Swarm. You lose the room.</li>
         </ol>
         <button type="button" class="btn primary" data-go="difficulty">Pick your poison</button>
@@ -161,13 +162,23 @@
               <span class="meter-label">It sits</span>
               <div class="meter-track"><div id="dwell-bar" class="meter-fill dwell"></div></div>
             </div>
-            <div class="meter">
-              <span class="meter-label">Clean shot</span>
-              <div class="meter-track"><div id="shot-bar" class="meter-fill shot"></div></div>
+          </div>
+
+          <div class="kick-meter" aria-label="Smack timing meter">
+            <span class="meter-label">Timing — stop it in the sweet spot</span>
+            <div id="kick-track" class="kick-track">
+              <div id="kick-sweet" class="kick-sweet"></div>
+              <div id="kick-needle" class="kick-needle"></div>
+            </div>
+            <div class="kick-legend">
+              <span>WIDE</span>
+              <span id="kick-grade">LOCK IT</span>
+              <span>TIGHT</span>
             </div>
           </div>
+
           <button type="button" id="btn-smack" class="btn primary smack-btn">SMACK</button>
-          <p class="shame-hint">Space / click SMACK · freeze to steady the shot</p>
+          <p class="shame-hint">Space / SMACK when the needle hits green · stay still or it gets harder</p>
         </div>
       </div>
 

@@ -134,6 +134,9 @@
     nerves: 70,
     stillMs: 0,
     lastPointer: { x: 0.5, y: 0.5 },
+    kickNeedle: 0.5,
+    kickDir: 1,
+    kickPhase: 0,
     smackBusy: false,
     paused: false,
     raf: 0,
@@ -218,7 +221,9 @@
   const shameCoach = $("#shame-coach");
   const nervesBar = $("#nerves-bar");
   const dwellBar = $("#dwell-bar");
-  const shotBar = $("#shot-bar");
+  const kickNeedle = $("#kick-needle");
+  const kickSweet = $("#kick-sweet");
+  const kickGrade = $("#kick-grade");
   const btnSmack = $("#btn-smack");
 
   btnGlass.addEventListener("click", () => {
@@ -436,8 +441,12 @@
     shamePov.hidden = false;
     btnSmack.disabled = false;
     shameArm.classList.remove("swing");
+    state.kickPhase = 0;
+    state.kickNeedle = 0.15;
+    state.kickDir = 1;
+    window.FlyAnnouncer?.startShameBed();
     updateShameUI(now);
-    showThink("Shame lock. Stay stone-still. Smack when the shot is clean.");
+    showThink("Shame lock. Stay still. Stop the needle in the green.");
     window.FlyAnnouncer?.line("spotted", { priority: true, rate: 1.08 });
     setTimeout(() => window.FlyAnnouncer?.line("smackUrgent", { priority: false }), 750);
   }
@@ -450,6 +459,7 @@
     state.phase = "hunt";
     state.smackTargetId = null;
     state.smackBusy = false;
+    window.FlyAnnouncer?.stopShameBed();
     shamePov.hidden = true;
     shameArm.classList.remove("swing");
     shamePov.classList.remove("high-nerves");
@@ -458,44 +468,96 @@
     btnGlass.disabled = false;
   }
 
-  function shotChance() {
-    // Longer stillness + lower nerves = cleaner kill
-    const calm = 1 - state.nerves / 100;
-    const stillBonus = Math.min(1, state.stillMs / 1600);
-    return clamp(0.18 + calm * 0.55 + stillBonus * 0.32, 0.08, 0.97);
+  /** Sweet-spot width (0–1 of track). Shrinks with time; stillness widens it. */
+  function sweetWidth() {
+    const elapsed = 1 - Math.max(0, state.smackDeadline - performance.now()) / state.smackDuration;
+    const base = 0.34 - elapsed * 0.24; // 34% → 10% as time burns
+    const stillBonus = Math.min(0.1, state.stillMs / 16000);
+    const nervePenalty = (state.nerves / 100) * 0.08;
+    return clamp(base + stillBonus - nervePenalty, 0.06, 0.38);
   }
 
-  function updateShameUI(ts) {
+  function sweetCenter() {
+    // Drifts slightly under nerves so it's not a free aim
+    return 0.5 + Math.sin(state.kickPhase * 0.35) * (state.nerves / 100) * 0.06;
+  }
+
+  function needleSpeed(dt) {
+    const elapsed = 1 - Math.max(0, state.smackDeadline - performance.now()) / state.smackDuration;
+    // Madden: gets harder — needle races more the longer you wait
+    const base = 0.55 + elapsed * 1.35 + (state.nerves / 100) * 0.55;
+    const stillSlow = Math.min(0.35, state.stillMs / 4500);
+    return Math.max(0.35, base - stillSlow);
+  }
+
+  function kickGradeAt(pos) {
+    const c = sweetCenter();
+    const w = sweetWidth();
+    const half = w / 2;
+    const dist = Math.abs(pos - c);
+    if (dist <= half * 0.35) return { grade: "PERFECT", hit: true, mult: 1 };
+    if (dist <= half) return { grade: "GOOD", hit: true, mult: 0.92 };
+    if (dist <= half * 1.45) return { grade: "CLOSE", hit: false, mult: 0.25 };
+    return { grade: "WIDE", hit: false, mult: 0 };
+  }
+
+  function updateShameUI(ts, dt = 0.016) {
     const left = Math.max(0, state.smackDeadline - ts);
-    const dwellPct = state.smackDuration ? (left / state.smackDuration) * 100 : 0;
-    dwellBar.style.width = dwellPct + "%";
+    const progress = state.smackDuration ? 1 - left / state.smackDuration : 1;
+    dwellBar.style.width = (left / state.smackDuration) * 100 + "%";
     nervesBar.style.width = state.nerves + "%";
-    const chance = shotChance();
-    shotBar.style.width = chance * 100 + "%";
 
-    const bpm = 55 + state.nerves * 1.1;
+    const bpm = 55 + state.nerves * 1.1 + progress * 35;
     shamePulse.style.animationDuration = 60 / bpm + "s";
-    shamePov.classList.toggle("high-nerves", state.nerves > 68);
+    shamePov.classList.toggle("high-nerves", state.nerves > 68 || progress > 0.65);
 
-    if (state.nerves > 75) {
-      shameCoach.textContent = "You’re shaking. Freeze. Be stone.";
-    } else if (state.nerves > 45) {
-      shameCoach.textContent = "Breathing… it feels you settling.";
-    } else {
-      shameCoach.textContent = "Clean. Shame it. Smack when ready.";
+    // Kick needle ping-pong
+    if (!state.smackBusy) {
+      const speed = needleSpeed(dt);
+      state.kickPhase += dt;
+      state.kickNeedle += state.kickDir * speed * dt;
+      if (state.kickNeedle >= 0.98) {
+        state.kickNeedle = 0.98;
+        state.kickDir = -1;
+      } else if (state.kickNeedle <= 0.02) {
+        state.kickNeedle = 0.02;
+        state.kickDir = 1;
+      }
     }
 
-    // Fly jitter scales with nerves — stillness steadies the gaze
-    const j = (state.nerves / 100) * 14;
+    const c = sweetCenter();
+    const w = sweetWidth();
+    kickSweet.style.left = (c - w / 2) * 100 + "%";
+    kickSweet.style.width = w * 100 + "%";
+    kickNeedle.style.left = state.kickNeedle * 100 + "%";
+    const preview = kickGradeAt(state.kickNeedle);
+    kickGrade.textContent = preview.grade;
+
+    if (progress > 0.7) {
+      shameCoach.textContent = "Buzz is eating your pulse — take the smack!";
+    } else if (state.nerves > 75) {
+      shameCoach.textContent = "You’re shaking. Freeze. Be stone.";
+    } else if (state.nerves > 45) {
+      shameCoach.textContent = "Breathing… stop the needle in the green.";
+    } else {
+      shameCoach.textContent = "Steady. Shame it when the needle kisses green.";
+    }
+
+    const j = (state.nerves / 100) * 14 + progress * 6;
     const t = ts / 1000;
     const jx = Math.sin(t * (3 + state.nerves / 20)) * j;
     const jy = Math.cos(t * (2.4 + state.nerves / 25)) * j * 0.75;
     shameFly.style.transform = `translate(${jx}px, ${jy}px)`;
-    // Arm micro-sway from heartbeat
     if (!shameArm.classList.contains("swing")) {
-      const sway = (state.nerves / 100) * 2.2;
+      const sway = (state.nerves / 100) * 2.2 + progress * 1.5;
       shameArm.style.transform = `rotate(${-8 + Math.sin(t * (bpm / 60) * Math.PI * 2) * sway}deg) translateY(${8 + sway}px)`;
     }
+
+    window.FlyAnnouncer?.updateShameBed({
+      progress,
+      bpm,
+      nerves: state.nerves,
+    });
   }
 
   function updateNerves(dt) {
@@ -527,16 +589,23 @@
     shameArm.classList.add("swing");
     shameArm.style.transform = "";
 
-    const chance = shotChance();
-    const hit = Math.random() < chance;
+    const result = kickGradeAt(state.kickNeedle);
+    kickGrade.textContent = result.grade;
+    // Tiny RNG only on GOOD edge cases; PERFECT always lands, WIDE/CLOSE miss
+    const hit =
+      result.grade === "PERFECT" ||
+      (result.grade === "GOOD" && Math.random() < result.mult);
 
     setTimeout(() => {
       if (hit) {
         splatKill(fly);
       } else {
         window.FlyAnnouncer?.line("miss", { priority: true });
-        showThink("MISS — nerves ruined it. It felt you twitch.");
-        // Early flee on miss
+        showThink(
+          result.grade === "CLOSE"
+            ? "CLOSE — needle clipped the edge. It bolted."
+            : "WIDE — timing shattered. Buzz took your heartbeat."
+        );
         smackEscaped();
       }
     }, 220);
@@ -753,7 +822,7 @@
       updateTimer(ts);
       if (state.phase === "smack") {
         updateNerves(dt);
-        updateShameUI(ts);
+        updateShameUI(ts, dt);
         if (!state.smackBusy && ts >= state.smackDeadline) smackEscaped();
       } else if (state.magnifierOn && state.pointer.over) {
         updateMagnifier();
