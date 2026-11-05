@@ -23,15 +23,15 @@
     spotted: [
       "Enemy spotted!",
       "Target acquired!",
-      "Visual on target!",
-      "He's right there!",
+      "Shame him!",
+      "Lock in!",
       "Contact!",
     ],
     smackUrgent: [
+      "Stay still!",
+      "Hold your nerves!",
       "Take the shot!",
-      "Finish him!",
-      "Don't hesitate!",
-      "Engage!",
+      "Make him feel it!",
     ],
     kill: [
       "Enemy down!",

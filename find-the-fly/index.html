@@ -49,7 +49,8 @@
           <li><strong>Think like vermin.</strong> Cold rooms → radiators &amp; food. Warm rooms → light &amp; sugar.</li>
           <li><strong>Use the glass.</strong> Magnify the grease. It’s smaller than your dignity.</li>
           <li><strong>Hint = track the flight.</strong> It lifts. You watch. You remember where it lands.</li>
-          <li><strong>Spot it, then SMACK.</strong> Finding it only starts the clock. Line up the swatter and crush it before the seconds die.</li>
+          <li><strong>Shame lock.</strong> Spot it and you zoom to first-person — hand raised, heartbeat in your ears. It only sits for a random 2–5 seconds.</li>
+          <li><strong>Stay stone-still.</strong> The longer you freeze, the calmer your nerves, the cleaner the smack. Twitch and the fly feels it.</li>
           <li><strong>Hesitate and it breeds.</strong> Replicas. Swarm. You lose the room.</li>
         </ol>
         <button type="button" class="btn primary" data-go="difficulty">Pick your poison</button>
@@ -97,36 +98,76 @@
         </div>
       </header>
 
-      <div id="smack-banner" class="smack-banner" hidden>
-        <span id="smack-label">SPOTTED — LINE UP &amp; SMACK</span>
-        <div class="smack-bar-track" aria-hidden="true">
-          <div id="smack-bar" class="smack-bar"></div>
-        </div>
-        <span id="smack-secs" class="smack-secs">3.5s</span>
-      </div>
-
       <div id="stage-wrap">
         <div id="stage">
           <div id="scene-root" aria-hidden="false"></div>
           <div id="flies-layer"></div>
           <div id="fx-layer" aria-hidden="true"></div>
-          <div id="swatter" hidden aria-hidden="true">
-            <svg viewBox="0 0 64 160" class="swatter-svg">
-              <rect x="28" y="70" width="8" height="90" rx="3" fill="#3a2a18"/>
-              <rect x="8" y="4" width="48" height="72" rx="10" fill="#2a2218" stroke="#6a5a40" stroke-width="3"/>
-              <g stroke="#5a4a30" stroke-width="2" fill="none" opacity="0.7">
-                <line x1="18" y1="16" x2="18" y2="64"/><line x1="28" y1="16" x2="28" y2="64"/>
-                <line x1="38" y1="16" x2="38" y2="64"/><line x1="48" y1="16" x2="48" y2="64"/>
-                <line x1="12" y1="28" x2="52" y2="28"/><line x1="12" y1="42" x2="52" y2="42"/>
-                <line x1="12" y1="56" x2="52" y2="56"/>
-              </g>
-            </svg>
-          </div>
           <div id="magnifier" hidden>
             <div id="mag-lens"></div>
             <div id="mag-rim"></div>
             <div id="mag-handle"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- First-person sniper shame lock-in -->
+      <div id="shame-pov" class="shame-pov" hidden aria-label="Shame lock-in">
+        <div class="shame-vignette" aria-hidden="true"></div>
+        <div class="shame-scope">
+          <div id="shame-zoom" class="shame-zoom"></div>
+          <div id="shame-fly" class="shame-fly" aria-hidden="true"></div>
+          <div class="shame-reticle" aria-hidden="true">
+            <span class="ret-h"></span><span class="ret-v"></span>
+            <span class="ret-ring"></span>
+          </div>
+          <div id="shame-pulse" class="shame-pulse" aria-hidden="true"></div>
+        </div>
+
+        <div id="shame-arm" class="shame-arm" aria-hidden="true">
+          <svg viewBox="0 0 420 520" class="shame-arm-svg">
+            <!-- forearm bent up holding swatter -->
+            <path d="M210 520 C200 430 175 360 150 300 C130 255 115 220 130 185"
+              fill="none" stroke="#6a4030" stroke-width="54" stroke-linecap="round"/>
+            <path d="M210 520 C200 430 175 360 150 300 C130 255 115 220 130 185"
+              fill="none" stroke="#8a5840" stroke-width="38" stroke-linecap="round"/>
+            <!-- fist -->
+            <ellipse cx="138" cy="168" rx="36" ry="28" fill="#7a4a38"/>
+            <ellipse cx="148" cy="158" rx="14" ry="10" fill="#8a5848"/>
+            <!-- swatter handle -->
+            <rect x="124" y="40" width="14" height="130" rx="4" fill="#3a2818" transform="rotate(-18 131 105)"/>
+            <!-- swatter head -->
+            <g transform="translate(78,8) rotate(-18)">
+              <rect x="0" y="0" width="100" height="78" rx="14" fill="#2a2218" stroke="#6a5a40" stroke-width="4"/>
+              <g stroke="#5a4a30" stroke-width="2.5" fill="none" opacity="0.75">
+                <line x1="18" y1="12" x2="18" y2="66"/><line x1="36" y1="12" x2="36" y2="66"/>
+                <line x1="54" y1="12" x2="54" y2="66"/><line x1="72" y1="12" x2="72" y2="66"/>
+                <line x1="10" y1="26" x2="90" y2="26"/><line x1="10" y1="42" x2="90" y2="42"/>
+                <line x1="10" y1="58" x2="90" y2="58"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div class="shame-chrome">
+          <p class="shame-title">SHAME LOCK</p>
+          <p id="shame-coach" class="shame-coach">Stay stone-still. The fly feels your nerves.</p>
+          <div class="shame-meters">
+            <div class="meter">
+              <span class="meter-label">Nerves</span>
+              <div class="meter-track"><div id="nerves-bar" class="meter-fill nerves"></div></div>
+            </div>
+            <div class="meter">
+              <span class="meter-label">It sits</span>
+              <div class="meter-track"><div id="dwell-bar" class="meter-fill dwell"></div></div>
+            </div>
+            <div class="meter">
+              <span class="meter-label">Clean shot</span>
+              <div class="meter-track"><div id="shot-bar" class="meter-fill shot"></div></div>
+            </div>
+          </div>
+          <button type="button" id="btn-smack" class="btn primary smack-btn">SMACK</button>
+          <p class="shame-hint">Space / click SMACK · freeze to steady the shot</p>
         </div>
       </div>
 

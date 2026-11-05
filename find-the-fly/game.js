@@ -12,9 +12,11 @@
       maxReplicas: 4,
       hintDuration: 3200,
       hitPadding: 14,
-      smackSeconds: 5.0,
-      skitter: 0.2,
-      smackHitBoost: 2.4,
+      dwellMin: 2.0,
+      dwellMax: 5.0,
+      nervesStart: 62,
+      stillEase: 28,
+      twitchSpike: 38,
     },
     normal: {
       label: "Kitchen menace",
@@ -26,9 +28,11 @@
       maxReplicas: 7,
       hintDuration: 2600,
       hitPadding: 10,
-      smackSeconds: 3.5,
-      skitter: 0.45,
-      smackHitBoost: 2.0,
+      dwellMin: 2.0,
+      dwellMax: 5.0,
+      nervesStart: 72,
+      stillEase: 22,
+      twitchSpike: 48,
     },
     hard: {
       label: "Fruit flea hell",
@@ -40,9 +44,11 @@
       maxReplicas: 12,
       hintDuration: 2000,
       hitPadding: 8,
-      smackSeconds: 2.2,
-      skitter: 0.85,
-      smackHitBoost: 1.7,
+      dwellMin: 2.0,
+      dwellMax: 5.0,
+      nervesStart: 82,
+      stillEase: 16,
+      twitchSpike: 58,
     },
   };
 
@@ -123,7 +129,12 @@
     magnifierOn: false,
     phase: "hunt", // hunt | smack
     smackDeadline: 0,
+    smackDuration: 0,
     smackTargetId: null,
+    nerves: 70,
+    stillMs: 0,
+    lastPointer: { x: 0.5, y: 0.5 },
+    smackBusy: false,
     paused: false,
     raf: 0,
     lastTs: 0,
@@ -199,10 +210,16 @@
   const magLens = $("#mag-lens");
   const thinkHint = $("#think-hint");
   const overlay = $("#overlay");
-  const swatter = $("#swatter");
-  const smackBanner = $("#smack-banner");
-  const smackBar = $("#smack-bar");
-  const smackSecs = $("#smack-secs");
+  const shamePov = $("#shame-pov");
+  const shameZoom = $("#shame-zoom");
+  const shameFly = $("#shame-fly");
+  const shameArm = $("#shame-arm");
+  const shamePulse = $("#shame-pulse");
+  const shameCoach = $("#shame-coach");
+  const nervesBar = $("#nerves-bar");
+  const dwellBar = $("#dwell-bar");
+  const shotBar = $("#shot-bar");
+  const btnSmack = $("#btn-smack");
 
   btnGlass.addEventListener("click", () => {
     if (state.phase === "smack") return;
@@ -365,13 +382,7 @@
 
   function onFlyClick(id) {
     if (state.paused || state.hinting) return;
-    // During smack, clicking the spotted fly (or near it) counts as a swat.
-    // Fly buttons stopPropagation, so stage never sees those clicks.
-    if (state.phase === "smack") {
-      if (id === state.smackTargetId) attemptSmack(true);
-      else attemptSmack(false);
-      return;
-    }
+    if (state.phase === "smack") return;
     const fly = state.flies.find((f) => f.id === id);
     if (!fly) return;
     if (fly.isPrimary) {
@@ -393,25 +404,42 @@
   function beginSmack(fly) {
     state.phase = "smack";
     state.smackTargetId = fly.id;
+    state.smackBusy = false;
     const now = performance.now();
-    state.smackDeadline = now + cfg().smackSeconds * 1000;
+    const dwell =
+      cfg().dwellMin + Math.random() * (cfg().dwellMax - cfg().dwellMin);
+    state.smackDuration = dwell * 1000;
+    state.smackDeadline = now + state.smackDuration;
     state.swarmFrozenLeft = Math.max(0, state.swarmDeadline - now);
+    state.nerves = cfg().nervesStart;
+    state.stillMs = 0;
+    state.lastPointer = { x: state.pointer.x, y: state.pointer.y };
     state.magnifierOn = false;
     syncGlassBtn();
     magnifier.hidden = true;
     stage.classList.remove("magnifying");
-    stage.classList.add("smacking");
     fly.el.classList.add("spotted");
     btnHint.disabled = true;
     btnGlass.disabled = true;
 
-    smackBanner.hidden = false;
-    swatter.hidden = false;
-    updateSwatter();
-    updateSmackUI(performance.now());
-    showThink("SPOTTED. Line up the swatter. Crush it. Now.");
+    // Build zoomed backdrop from scene around the fly
+    const rect = stage.getBoundingClientRect();
+    shameZoom.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.style.cssText = `position:absolute;width:${rect.width}px;height:${rect.height}px;left:50%;top:50%;transform:translate(-50%,-50%) scale(2.4) translate(${(0.5 - fly.x) * rect.width}px, ${(0.42 - fly.y) * rect.height}px)`;
+    const sceneClone = sceneRoot.cloneNode(true);
+    sceneClone.style.cssText = "position:absolute;inset:0";
+    wrap.appendChild(sceneClone);
+    shameZoom.appendChild(wrap);
+
+    shameFly.innerHTML = flySVGMarkup(Math.max(28, cfg().size * 1.8));
+    shamePov.hidden = false;
+    btnSmack.disabled = false;
+    shameArm.classList.remove("swing");
+    updateShameUI(now);
+    showThink("Shame lock. Stay stone-still. Smack when the shot is clean.");
     window.FlyAnnouncer?.line("spotted", { priority: true, rate: 1.08 });
-    setTimeout(() => window.FlyAnnouncer?.line("smackUrgent", { priority: false }), 700);
+    setTimeout(() => window.FlyAnnouncer?.line("smackUrgent", { priority: false }), 750);
   }
 
   function endSmackUI() {
@@ -421,53 +449,109 @@
     }
     state.phase = "hunt";
     state.smackTargetId = null;
-    smackBanner.hidden = true;
-    swatter.hidden = true;
-    swatter.classList.remove("swing");
-    stage.classList.remove("smacking");
+    state.smackBusy = false;
+    shamePov.hidden = true;
+    shameArm.classList.remove("swing");
+    shamePov.classList.remove("high-nerves");
     state.flies.forEach((f) => f.el.classList.remove("spotted"));
     btnHint.disabled = false;
     btnGlass.disabled = false;
   }
 
-  function updateSmackUI(ts) {
-    const left = Math.max(0, state.smackDeadline - ts);
-    const total = cfg().smackSeconds * 1000;
-    const pct = (left / total) * 100;
-    smackBar.style.width = pct + "%";
-    smackSecs.textContent = (left / 1000).toFixed(1) + "s";
-    if (left < 1000) smackBanner.style.background = "linear-gradient(90deg,#7a0808,#4a0808 40%,#7a0808)";
+  function shotChance() {
+    // Longer stillness + lower nerves = cleaner kill
+    const calm = 1 - state.nerves / 100;
+    const stillBonus = Math.min(1, state.stillMs / 1600);
+    return clamp(0.18 + calm * 0.55 + stillBonus * 0.32, 0.08, 0.97);
   }
 
-  function attemptSmack(forceHit) {
-    if (state.phase !== "smack" || state.paused) return;
+  function updateShameUI(ts) {
+    const left = Math.max(0, state.smackDeadline - ts);
+    const dwellPct = state.smackDuration ? (left / state.smackDuration) * 100 : 0;
+    dwellBar.style.width = dwellPct + "%";
+    nervesBar.style.width = state.nerves + "%";
+    const chance = shotChance();
+    shotBar.style.width = chance * 100 + "%";
+
+    const bpm = 55 + state.nerves * 1.1;
+    shamePulse.style.animationDuration = 60 / bpm + "s";
+    shamePov.classList.toggle("high-nerves", state.nerves > 68);
+
+    if (state.nerves > 75) {
+      shameCoach.textContent = "You’re shaking. Freeze. Be stone.";
+    } else if (state.nerves > 45) {
+      shameCoach.textContent = "Breathing… it feels you settling.";
+    } else {
+      shameCoach.textContent = "Clean. Shame it. Smack when ready.";
+    }
+
+    // Fly jitter scales with nerves — stillness steadies the gaze
+    const j = (state.nerves / 100) * 14;
+    const t = ts / 1000;
+    const jx = Math.sin(t * (3 + state.nerves / 20)) * j;
+    const jy = Math.cos(t * (2.4 + state.nerves / 25)) * j * 0.75;
+    shameFly.style.transform = `translate(${jx}px, ${jy}px)`;
+    // Arm micro-sway from heartbeat
+    if (!shameArm.classList.contains("swing")) {
+      const sway = (state.nerves / 100) * 2.2;
+      shameArm.style.transform = `rotate(${-8 + Math.sin(t * (bpm / 60) * Math.PI * 2) * sway}deg) translateY(${8 + sway}px)`;
+    }
+  }
+
+  function updateNerves(dt) {
+    const dx = state.pointer.x - state.lastPointer.x;
+    const dy = state.pointer.y - state.lastPointer.y;
+    const move = Math.hypot(dx, dy);
+    state.lastPointer = { x: state.pointer.x, y: state.pointer.y };
+
+    // Pointer motion (or any twitch) spikes nerves; stillness calms them
+    if (move > 0.004) {
+      state.nerves = clamp(state.nerves + move * cfg().twitchSpike * 40 * dt * 60, 0, 100);
+      state.stillMs = 0;
+    } else {
+      state.stillMs += dt * 1000;
+      const ease = cfg().stillEase * dt * (1 + Math.min(state.stillMs / 2000, 1.5));
+      state.nerves = clamp(state.nerves - ease, 0, 100);
+    }
+  }
+
+  function attemptSmack() {
+    if (state.phase !== "smack" || state.paused || state.smackBusy) return;
     const fly = state.flies.find((f) => f.id === state.smackTargetId);
     if (!fly) return;
 
-    swatter.classList.remove("swing");
-    void swatter.offsetWidth;
-    swatter.classList.add("swing");
+    state.smackBusy = true;
+    btnSmack.disabled = true;
+    shameArm.classList.remove("swing");
+    void shameArm.offsetWidth;
+    shameArm.classList.add("swing");
+    shameArm.style.transform = "";
 
-    let hit = !!forceHit;
-    if (!hit) {
-      const rect = stage.getBoundingClientRect();
-      const pad =
-        ((cfg().size / rect.width) * 1.1 + cfg().hitPadding / rect.width) * cfg().smackHitBoost;
-      const dx = fly.x - state.pointer.x;
-      const dy = fly.y - state.pointer.y;
-      hit = Math.hypot(dx, dy) < pad;
-    }
+    const chance = shotChance();
+    const hit = Math.random() < chance;
 
-    if (hit) {
-      splatKill(fly);
-    } else {
-      showThink("MISS. Still buzzing. Line it up.");
-      window.FlyAnnouncer?.line("miss", { priority: true });
-      fly.x = clamp(fly.x + (Math.random() - 0.5) * 0.04, 0.06, 0.94);
-      fly.y = clamp(fly.y + (Math.random() - 0.5) * 0.04, 0.08, 0.9);
-      placeFly(fly);
-    }
+    setTimeout(() => {
+      if (hit) {
+        splatKill(fly);
+      } else {
+        window.FlyAnnouncer?.line("miss", { priority: true });
+        showThink("MISS — nerves ruined it. It felt you twitch.");
+        // Early flee on miss
+        smackEscaped();
+      }
+    }, 220);
   }
+
+  btnSmack?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    attemptSmack();
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && state.phase === "smack") {
+      e.preventDefault();
+      attemptSmack();
+    }
+  });
 
   function splatKill(fly) {
     state.paused = true;
@@ -668,9 +752,9 @@
       updateFlies(dt, ts);
       updateTimer(ts);
       if (state.phase === "smack") {
-        updateSmackUI(ts);
-        updateSwatter();
-        if (ts >= state.smackDeadline) smackEscaped();
+        updateNerves(dt);
+        updateShameUI(ts);
+        if (!state.smackBusy && ts >= state.smackDeadline) smackEscaped();
       } else if (state.magnifierOn && state.pointer.over) {
         updateMagnifier();
       }
@@ -698,21 +782,6 @@
           fly.x = fly.tx;
           fly.y = fly.ty;
           fly.el.style.transform = "translate(-50%, -50%)";
-          placeFly(fly);
-        }
-        continue;
-      }
-
-      // During smack: nervous twitch — hard enough to feel alive, soft enough to hit
-      if (state.phase === "smack" && fly.id === state.smackTargetId) {
-        fly.skitterPhase += dt * (3 + cfg().skitter * 4);
-        const amp = 0.002 + cfg().skitter * 0.0035;
-        const jx = Math.sin(fly.skitterPhase * 1.7) * amp;
-        const jy = Math.cos(fly.skitterPhase * 2.1) * amp;
-        fly.el.style.transform = `translate(-50%, -50%) translate(${jx * stage.clientWidth}px, ${jy * stage.clientHeight}px)`;
-        if (Math.random() < dt * cfg().skitter * 0.35) {
-          fly.x = clamp(fly.x + (Math.random() - 0.5) * 0.01 * cfg().skitter, 0.06, 0.94);
-          fly.y = clamp(fly.y + (Math.random() - 0.5) * 0.01 * cfg().skitter, 0.08, 0.9);
           placeFly(fly);
         }
       }
@@ -747,16 +816,6 @@
       replicate();
       state.replicaAt = ts + cfg().replicaInterval * 1000;
     }
-  }
-
-  function updateSwatter() {
-    if (state.phase !== "smack" || !state.pointer.over) {
-      if (state.phase === "smack") swatter.style.opacity = "0.35";
-      return;
-    }
-    swatter.style.opacity = "1";
-    swatter.style.left = state.pointer.x * 100 + "%";
-    swatter.style.top = state.pointer.y * 100 + "%";
   }
 
   function updateMagnifier() {
@@ -816,8 +875,9 @@
     scaled.style.transform = `translate(${ox}px, ${oy}px) scale(${zoom})`;
   }
 
-  function pointerFromEvent(e) {
-    const rect = stage.getBoundingClientRect();
+  function pointerFromEvent(e, el) {
+    const target = el || stage;
+    const rect = target.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     state.pointer.x = clamp((clientX - rect.left) / rect.width, 0, 1);
@@ -826,27 +886,29 @@
   }
 
   stage.addEventListener("pointermove", (e) => {
+    if (state.phase === "smack") return;
     pointerFromEvent(e);
-    if (state.phase === "smack") updateSwatter();
-    else if (state.magnifierOn) updateMagnifier();
+    if (state.magnifierOn) updateMagnifier();
   });
   stage.addEventListener("pointerenter", (e) => {
+    if (state.phase === "smack") return;
     pointerFromEvent(e);
-    if (state.phase === "smack") updateSwatter();
-    else if (state.magnifierOn) updateMagnifier();
+    if (state.magnifierOn) updateMagnifier();
   });
   stage.addEventListener("pointerleave", () => {
+    if (state.phase === "smack") return;
     state.pointer.over = false;
     if (state.magnifierOn) magnifier.hidden = true;
   });
 
+  // During shame lock, any pointer motion spikes nerves
+  shamePov.addEventListener("pointermove", (e) => {
+    if (state.phase !== "smack") return;
+    pointerFromEvent(e, shamePov);
+  });
+
   stage.addEventListener("click", (e) => {
-    if (state.paused || state.hinting) return;
-    if (state.phase === "smack") {
-      pointerFromEvent(e);
-      attemptSmack();
-      return;
-    }
+    if (state.paused || state.hinting || state.phase === "smack") return;
     if (!state.magnifierOn) return;
     const rect = stage.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;

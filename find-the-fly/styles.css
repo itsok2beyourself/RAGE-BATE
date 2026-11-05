@@ -344,6 +344,7 @@ button:focus-visible {
 
 /* ── Play ── */
 #screen-play {
+  position: relative;
   padding: 0;
   background: #120a06;
 }
@@ -435,52 +436,195 @@ button:focus-visible {
   50% { filter: brightness(1.25); }
 }
 
-/* Smack phase banner */
-.smack-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 1rem;
-  background: linear-gradient(90deg, #5a1808, #3a1008 40%, #5a1808);
-  border-bottom: 2px solid var(--bile);
-  z-index: 6;
-  animation: smack-flash 0.45s ease-out;
+/* ── Shame / sniper POV ── */
+.shame-pov {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: #0a0604;
+  overflow: hidden;
+  animation: shame-zoom-in 0.55s var(--ease) both;
 }
-.smack-banner[hidden] { display: none !important; }
-@keyframes smack-flash {
-  from { filter: brightness(2); transform: translateY(-6px); }
-  to { filter: none; transform: none; }
+.shame-pov[hidden] { display: none !important; }
+@keyframes shame-zoom-in {
+  from { opacity: 0; transform: scale(1.35); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
 }
-#smack-label {
+.shame-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 18%, rgba(0,0,0,0.55) 48%, rgba(0,0,0,0.92) 78%),
+    radial-gradient(ellipse at center, transparent 40%, rgba(80, 10, 0, 0.25) 100%);
+}
+.shame-scope {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.shame-zoom {
+  position: absolute;
+  inset: -20%;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.8);
+  filter: contrast(1.08) saturate(0.9);
+  transition: transform 0.4s var(--ease);
+}
+.shame-fly {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 42px;
+  height: 32px;
+  margin: -16px -21px;
+  z-index: 3;
+  filter: drop-shadow(0 0 8px rgba(240, 255, 58, 0.35));
+  will-change: transform;
+}
+.shame-fly svg { width: 100%; height: 100%; overflow: visible; }
+.shame-reticle {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 120px;
+  height: 120px;
+  margin: -60px;
+  z-index: 5;
+  pointer-events: none;
+}
+.ret-h, .ret-v {
+  position: absolute;
+  background: rgba(214, 222, 42, 0.55);
+}
+.ret-h { left: 8%; right: 8%; top: 50%; height: 1px; }
+.ret-v { top: 8%; bottom: 8%; left: 50%; width: 1px; }
+.ret-ring {
+  position: absolute;
+  inset: 18%;
+  border: 1px solid rgba(214, 222, 42, 0.45);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+}
+.shame-pulse {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 160px;
+  height: 160px;
+  margin: -80px;
+  border-radius: 50%;
+  border: 2px solid rgba(168, 72, 56, 0.55);
+  z-index: 2;
+  pointer-events: none;
+  animation: heartbeat 1s ease-in-out infinite;
+}
+@keyframes heartbeat {
+  0%, 100% { transform: scale(0.92); opacity: 0.15; }
+  15% { transform: scale(1.08); opacity: 0.55; }
+  30% { transform: scale(0.96); opacity: 0.25; }
+  45% { transform: scale(1.05); opacity: 0.45; }
+  60% { transform: scale(0.92); opacity: 0.15; }
+}
+
+.shame-arm {
+  position: absolute;
+  right: -2%;
+  bottom: -4%;
+  width: min(52vw, 380px);
+  z-index: 8;
+  pointer-events: none;
+  transform-origin: 70% 90%;
+  transform: rotate(-8deg) translateY(8px);
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.55));
+  transition: transform 0.12s linear;
+}
+.shame-arm-svg { width: 100%; height: auto; display: block; }
+.shame-arm.swing {
+  animation: arm-smack 0.28s ease-out;
+}
+@keyframes arm-smack {
+  0% { transform: rotate(-8deg) translateY(8px); }
+  35% { transform: rotate(28deg) translate(-40px, -30px) scale(1.05); }
+  100% { transform: rotate(-8deg) translateY(8px); }
+}
+.shame-pov.high-nerves .shame-arm {
+  animation: arm-tremor 0.18s ease-in-out infinite alternate;
+}
+@keyframes arm-tremor {
+  from { transform: rotate(-9deg) translate(1px, 9px); }
+  to { transform: rotate(-6deg) translate(-1px, 6px); }
+}
+
+.shame-chrome {
+  position: relative;
+  z-index: 10;
+  padding: 0.75rem 1rem 1rem;
+  background: linear-gradient(0deg, rgba(10, 6, 4, 0.98), rgba(20, 10, 6, 0.92));
+  border-top: 1px solid rgba(214, 222, 42, 0.2);
+  text-align: center;
+}
+.shame-title {
   font-family: var(--font-display);
-  font-size: clamp(0.95rem, 2.5vw, 1.2rem);
-  letter-spacing: 0.06em;
-  color: var(--bile-hot);
-  text-transform: uppercase;
-  white-space: nowrap;
-  animation: itch-brand 0.7s ease-in-out infinite;
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+  color: var(--bile);
 }
-.smack-bar-track {
-  flex: 1;
-  height: 10px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(214, 222, 42, 0.35);
+.shame-coach {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--meat);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.shame-meters {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem auto 0.85rem;
+  max-width: 28rem;
+  text-align: left;
+}
+.meter-label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  margin-bottom: 0.15rem;
+}
+.meter-track {
+  height: 8px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(214, 222, 42, 0.2);
   border-radius: 2px;
   overflow: hidden;
 }
-.smack-bar {
+.meter-fill {
   height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, var(--warn), var(--bile));
-  transform-origin: left center;
-  transition: width 0.05s linear;
+  width: 50%;
+  transition: width 0.08s linear;
 }
-.smack-secs {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--bile-hot);
-  min-width: 3.2rem;
-  text-align: right;
+.meter-fill.nerves { background: linear-gradient(90deg, #3a8a40, var(--warn) 70%, #ff2a10); }
+.meter-fill.dwell { background: linear-gradient(90deg, var(--bile), var(--warn)); }
+.meter-fill.shot { background: linear-gradient(90deg, #3a5a20, var(--bile-hot)); }
+.smack-btn {
+  min-width: 10rem;
+  min-height: 3.1rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.14em;
+  box-shadow: 4px 4px 0 #1a1008, 0 0 24px rgba(214, 222, 42, 0.25);
+}
+.smack-btn:disabled { opacity: 0.45; filter: grayscale(0.4); }
+.shame-hint {
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  color: var(--paper-dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 #stage-wrap {
@@ -505,15 +649,6 @@ button:focus-visible {
 }
 #stage.magnifying { cursor: none; }
 #stage.magnifying .fly-target { pointer-events: none; }
-#stage.smacking {
-  cursor: none;
-  animation: stage-rage 0.35s ease-in-out infinite alternate;
-}
-@keyframes stage-rage {
-  from { filter: saturate(1.05) contrast(1.05); }
-  to { filter: saturate(1.2) contrast(1.12) hue-rotate(-4deg); }
-}
-#stage.smacking .fly-target { pointer-events: none; }
 
 #scene-root,
 #flies-layer,
@@ -575,29 +710,6 @@ button:focus-visible {
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
   to { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
 }
-
-/* Swatter cursor */
-#swatter {
-  position: absolute;
-  width: 64px;
-  height: 150px;
-  z-index: 12;
-  pointer-events: none;
-  /* Mesh/head sits on the cursor; handle hangs below-right */
-  transform: translate(-50%, -22%) rotate(-18deg);
-  transform-origin: 50% 22%;
-  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
-  transition: transform 0.05s linear;
-}
-#swatter.swing {
-  animation: swat-swing 0.18s ease-out;
-}
-@keyframes swat-swing {
-  0% { transform: translate(-50%, -22%) rotate(-18deg) scale(1); }
-  40% { transform: translate(-50%, -18%) rotate(22deg) scale(1.1); }
-  100% { transform: translate(-50%, -22%) rotate(-18deg) scale(1); }
-}
-.swatter-svg { width: 100%; height: 100%; display: block; }
 
 /* Magnifier */
 #magnifier {
