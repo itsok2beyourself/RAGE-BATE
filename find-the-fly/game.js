@@ -154,6 +154,7 @@
       state.difficulty = btn.dataset.diff;
       state.score = 0;
       state.sceneIndex = 0;
+      window.FlyAnnouncer?.unlock();
       startRound();
       go("play");
     });
@@ -163,10 +164,25 @@
     stopLoop();
     endSmackUI();
     hideOverlay();
+    window.FlyAnnouncer?.stopAmbient();
     state.magnifierOn = false;
     syncGlassBtn();
     go("title");
   });
+
+  const btnAnnouncer = $("#btn-announcer");
+  if (btnAnnouncer) {
+    btnAnnouncer.addEventListener("click", () => {
+      const next = !(window.FlyAnnouncer?.enabled !== false);
+      window.FlyAnnouncer?.setEnabled(next);
+      btnAnnouncer.setAttribute("aria-pressed", String(next));
+      btnAnnouncer.textContent = next ? "VO ON" : "VO OFF";
+      if (next && state.screen === "play" && !state.paused) {
+        window.FlyAnnouncer?.startAmbient();
+        window.FlyAnnouncer?.line("matchStart", { priority: true });
+      }
+    });
+  }
 
   $("#btn-skip").addEventListener("click", () => {
     if (state.paused) return;
@@ -336,6 +352,8 @@
     btnGlass.disabled = false;
     startLoop();
     updateMagnifier();
+    window.FlyAnnouncer?.line("matchStart", { priority: true });
+    window.FlyAnnouncer?.startAmbient();
   }
 
   function showThink(text) {
@@ -368,6 +386,7 @@
         { duration: 220 }
       );
       showThink("Wrong one. That’s a replica. The original is still mocking you.");
+      window.FlyAnnouncer?.line("decoy", { priority: true });
     }
   }
 
@@ -391,6 +410,8 @@
     updateSwatter();
     updateSmackUI(performance.now());
     showThink("SPOTTED. Line up the swatter. Crush it. Now.");
+    window.FlyAnnouncer?.line("spotted", { priority: true, rate: 1.08 });
+    setTimeout(() => window.FlyAnnouncer?.line("smackUrgent", { priority: false }), 700);
   }
 
   function endSmackUI() {
@@ -441,6 +462,7 @@
       splatKill(fly);
     } else {
       showThink("MISS. Still buzzing. Line it up.");
+      window.FlyAnnouncer?.line("miss", { priority: true });
       fly.x = clamp(fly.x + (Math.random() - 0.5) * 0.04, 0.06, 0.94);
       fly.y = clamp(fly.y + (Math.random() - 0.5) * 0.04, 0.08, 0.9);
       placeFly(fly);
@@ -450,8 +472,10 @@
   function splatKill(fly) {
     state.paused = true;
     stopLoop();
+    window.FlyAnnouncer?.stopAmbient();
     state.score += 1;
     $("#score-chip").textContent = state.score + " dead";
+    window.FlyAnnouncer?.killCall(state.score);
 
     const mark = document.createElement("div");
     mark.className = "splat-mark";
@@ -501,12 +525,15 @@
     // punish: shave swarm time
     state.swarmDeadline -= 8000;
     showThink("It got away. You hesitated. Now it’s somewhere worse.");
+    window.FlyAnnouncer?.line("escaped", { priority: true });
   }
 
   function loseRound(reason) {
     state.paused = true;
     stopLoop();
+    window.FlyAnnouncer?.stopAmbient();
     endSmackUI();
+    window.FlyAnnouncer?.line("swarm", { priority: true, rate: 0.95, pitch: 0.65 });
     showOverlay("Swarm", reason, true);
   }
 
@@ -561,6 +588,7 @@
     });
 
     showThink("Track that disgusting path. Remember the landing.");
+    window.FlyAnnouncer?.line("hint", { priority: true });
 
     const trail = setInterval(() => {
       if (!state.hinting) return;
@@ -628,6 +656,7 @@
     replica.label = perch.label;
     state.flies.push(replica);
     showThink("It split. Kill the original before the room fills with wings.");
+    window.FlyAnnouncer?.line("replica", { priority: true });
   }
 
   function startLoop() {
@@ -701,6 +730,10 @@
     const chip = $("#timer-chip");
     chip.textContent = `${m}:${s}`;
     chip.classList.toggle("danger", sec <= 12);
+    if (sec <= 12 && sec > 0 && !window.FlyAnnouncer?.spokeTimeLow) {
+      if (window.FlyAnnouncer) window.FlyAnnouncer.spokeTimeLow = true;
+      window.FlyAnnouncer?.line("timeLow", { priority: true });
+    }
 
     if (state.phase === "smack") return;
 

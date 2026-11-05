@@ -21,7 +21,7 @@
       <div class="title-stage">
         <p class="brand">KILL<br>THE FLY</p>
         <h1 class="tagline">It’s been on the fruit. On the trash. On your lip while you slept.</h1>
-        <p class="lede">Hunt it through the filth. Spot it. Then you get a few ugly seconds to line up the swatter and end it — before it lifts and breeds.</p>
+        <p class="lede">Hunt it through the filth. Spot it. Then you get a few ugly seconds to line up the swatter and end it — before it lifts and breeds. Match announcer rides in the background the whole time — COD lobby energy, pest-control mission.</p>
         <div class="cta-row">
           <button type="button" class="btn primary throb" data-go="difficulty">I hate it already</button>
           <button type="button" class="btn ghost" data-go="howto">How this works</button>
@@ -90,6 +90,7 @@
           <span id="scene-label" class="hud-scene">Kitchen</span>
         </div>
         <div class="hud-stats">
+          <button type="button" id="btn-announcer" class="chip chip-btn" aria-pressed="true" title="Match announcer">VO ON</button>
           <span id="temp-chip" class="chip" title="Room temperature">72°F</span>
           <span id="timer-chip" class="chip warn" title="Time until swarm">0:45</span>
           <span id="score-chip" class="chip">0 dead</span>
@@ -154,6 +155,7 @@
       </div>
     </div>
   </div>
+  <script src="announcer.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
