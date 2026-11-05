@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Find the Fly</title>
+<meta name="description" content="A Where's-Waldo hunt through real living spaces — think like a fly, track the buzz, catch it before it multiplies." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- TITLE -->
+    <section id="screen-title" class="screen active" aria-label="Title">
+      <div class="atmosphere" aria-hidden="true"></div>
+      <div class="title-stage">
+        <p class="brand">Find the Fly</p>
+        <h1 class="tagline">One buzz. One room. Zero mercy.</h1>
+        <p class="lede">Scan real living messes. Think where a fly would land — light, food, warmth — then pin it before the swarm.</p>
+        <div class="cta-row">
+          <button type="button" class="btn primary" data-go="difficulty">Play</button>
+          <button type="button" class="btn ghost" data-go="howto">How it works</button>
+        </div>
+      </div>
+      <div class="title-fly" aria-hidden="true">
+        <svg viewBox="0 0 80 60" class="hero-fly">
+          <ellipse class="wing wing-l" cx="22" cy="28" rx="18" ry="10" />
+          <ellipse class="wing wing-r" cx="58" cy="28" rx="18" ry="10" />
+          <ellipse cx="40" cy="32" rx="12" ry="9" fill="#1a1612" />
+          <circle cx="48" cy="28" r="3.2" fill="#2a241c" />
+          <circle cx="49.2" cy="27.2" r="1" fill="#c8f06a" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- HOW TO -->
+    <section id="screen-howto" class="screen" aria-label="How it works">
+      <button type="button" class="back" data-go="title">← Back</button>
+      <div class="panel">
+        <h2>How it works</h2>
+        <ol class="rules">
+          <li><strong>Scan the room.</strong> Every scene is a lived-in space with crumbs, lamps, vents, and trash.</li>
+          <li><strong>Think like a fly.</strong> Warm rooms pull toward light. Cold rooms pull toward heat and food. Filthy counters beat clean windowsills.</li>
+          <li><strong>Use the glass.</strong> Hold the magnifier to peer closer — flies hide in the clutter.</li>
+          <li><strong>Tap Get a hint</strong> and the fly lifts off. Track the flight path, then find where it settles.</li>
+          <li><strong>Don’t dawdle.</strong> Take too long and it replicates. Swarm = timeout.</li>
+        </ol>
+        <button type="button" class="btn primary" data-go="difficulty">Pick difficulty</button>
+      </div>
+    </section>
+
+    <!-- DIFFICULTY -->
+    <section id="screen-difficulty" class="screen" aria-label="Difficulty">
+      <button type="button" class="back" data-go="title">← Back</button>
+      <div class="panel">
+        <h2>How tough?</h2>
+        <p class="lede tight">Difficulty changes the fly’s size and speed, how cold the room runs, and how fast the swarm starts.</p>
+        <div class="diff-grid" role="list">
+          <button type="button" class="diff-card" data-diff="easy" role="listitem">
+            <span class="diff-name">Housefly</span>
+            <span class="diff-meta">Big · slow · warm kitchen</span>
+            <span class="diff-blurb">Fat target. Plenty of time. Heat keeps it near the counter light.</span>
+          </button>
+          <button type="button" class="diff-card" data-diff="normal" role="listitem">
+            <span class="diff-name">Busy bee</span>
+            <span class="diff-meta">Medium · quick · drafty room</span>
+            <span class="diff-blurb">Chilly air. It hunts lamps and leftover plates.</span>
+          </button>
+          <button type="button" class="diff-card" data-diff="hard" role="listitem">
+            <span class="diff-name">Fruit flea</span>
+            <span class="diff-meta">Tiny · frantic · cold flat</span>
+            <span class="diff-blurb">Needle-sized. Blinks between food and radiators. Swarm timer bites early.</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAY -->
+    <section id="screen-play" class="screen" aria-label="Game">
+      <header class="hud">
+        <div class="hud-left">
+          <span class="hud-brand">Find the Fly</span>
+          <span id="scene-label" class="hud-scene">Kitchen</span>
+        </div>
+        <div class="hud-stats">
+          <span id="temp-chip" class="chip" title="Room temperature">72°F</span>
+          <span id="timer-chip" class="chip warn" title="Time until swarm">0:45</span>
+          <span id="score-chip" class="chip">0 found</span>
+        </div>
+      </header>
+
+      <div id="stage-wrap">
+        <div id="stage">
+          <div id="scene-root" aria-hidden="false"></div>
+          <div id="flies-layer"></div>
+          <div id="fx-layer" aria-hidden="true"></div>
+          <div id="magnifier" hidden>
+            <div id="mag-lens"></div>
+            <div id="mag-rim"></div>
+            <div id="mag-handle"></div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="controls">
+        <button type="button" id="btn-glass" class="btn tool" aria-pressed="false">
+          <span class="tool-ico" aria-hidden="true">⌕</span> Magnifier
+        </button>
+        <button type="button" id="btn-hint" class="btn tool">
+          <span class="tool-ico" aria-hidden="true">↻</span> Get a hint
+        </button>
+        <button type="button" id="btn-skip" class="btn ghost slim">Skip room</button>
+      </footer>
+
+      <p id="think-hint" class="think-hint" aria-live="polite"></p>
+    </section>
+
+    <!-- RESULT OVERLAY -->
+    <div id="overlay" class="overlay" hidden>
+      <div class="overlay-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+        <h2 id="overlay-title">Caught it</h2>
+        <p id="overlay-body"></p>
+        <div class="cta-row">
+          <button type="button" id="btn-next" class="btn primary">Next room</button>
+          <button type="button" id="btn-menu" class="btn ghost">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
